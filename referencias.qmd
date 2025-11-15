@@ -1,0 +1,23 @@
+---
+title: "Referencias"
+---
+
+## Librerías de R utilizadas
+
+1. **ggplot2**: Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis*. Disponible en: <https://ggplot2.tidyverse.org>.
+2. **dplyr**: Wickham, H., François, R., Henry, L., & Müller, K. (2023). *dplyr: A Grammar of Data Manipulation*. Disponible en: <https://dplyr.tidyverse.org>.
+3. **corrplot**: Wei, T., & Simko, V. (2021). *corrplot: Visualization of a Correlation Matrix*. R package version 0.92. Disponible en: <https://github.com/taiyun/corrplot>.
+4. **caret**: Kuhn, M. (2023). *caret: Classification and Regression Training*. R package version 6.0-94. Disponible en: <https://cran.r-project.org/web/packages/caret/>.
+5. **ResourceSelection**: Lele, S., & Keim, J. (2022). *ResourceSelection: Resource Selection (Probability) Functions for Use-Availability Data*. Disponible en: <https://cran.r-project.org/web/packages/ResourceSelection/>.
+6. **pROC**: Robin, X., Turck, N., Hainard, A., et al. (2011). *pROC: Display and Analyze ROC Curves*. Disponible en: <https://cran.r-project.org/web/packages/pROC/>.
+
+## Recursos y documentación en línea
+
+7. *Fundamentos de Ciencia de Datos con R*: Gema Fernández-Avilés y José-María Montero. Disponible en: [Fundamentos de Ciencia de Datos con R](https://cdr-book.github.io/index.html).
+8. *Modelo de predicción de enfermedad coronaria*: Romy Ravines. Disponible en: [Romy Ravines - Enfermedad Coronaria](https://ravinesromy-econometrics02.netlify.app/enfermedad-coronaria).
+9. *Documentación de Quarto*: Disponible en: [Quarto HTML Basics](https://quarto.org/docs/output-formats/html-basics.html).
+
+## Otros materiales y fuentes
+
+10. Apuntes del curso de Fundamentos de la Ciencia de Datos. Dra. Romy Ravines.
+11. Conjuntos de datos y análisis disponibles en Kaggle, relacionados con modelos predictivos.

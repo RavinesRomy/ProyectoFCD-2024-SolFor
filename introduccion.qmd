@@ -1,0 +1,166 @@
+---
+title: "Introducción"
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+## Introducción y Comprensión del Negocio
+
+### Justificación del Proyecto
+
+El rendimiento académico es un indicador fundamental del éxito educativo, y su análisis permite identificar factores clave que afectan el desempeño de los estudiantes.
+Este proyecto busca no solo predecir resultados académicos, sino también proporcionar una base sólida para la toma de decisiones orientadas a mejorar la calidad educativa.
+Al identificar patrones en los datos, es posible diseñar estrategias específicas que beneficien a estudiantes en riesgo, optimicen los recursos disponibles y promuevan la equidad en el acceso a oportunidades educativas.
+Este enfoque basado en evidencia destaca la importancia de utilizar herramientas analíticas modernas para enfrentar desafíos educativos complejos de manera eficiente y práctica.
+
+### CRISP-DM como Metodología
+
+En este proyecto seguiremos el marco de referencia **CRISP-DM (Cross Industry Standard Process for Data Mining)**, que ofrece un enfoque estructurado para proyectos de análisis de datos.
+Este modelo se compone de las siguientes fases:
+
+-   **Comprensión del negocio:** Identificar los objetivos y necesidades del análisis desde una perspectiva práctica.
+-   **Comprensión de los datos:** Explorar los datos disponibles, evaluar su calidad y determinar cómo pueden contribuir al problema.
+-   **Preparación de los datos:** Limpiar, transformar y seleccionar las variables relevantes para el análisis.
+-   **Modelado:** Aplicar algoritmos para generar resultados que permitan extraer patrones o predicciones.
+-   **Evaluación:** Validar si los resultados obtenidos cumplen con los objetivos del negocio.
+-   **Implementación:** Traducir los resultados en acciones o herramientas prácticas.
+
+Este enfoque garantiza que el proyecto esté alineado con las necesidades del negocio y permita obtener resultados prácticos y efectivos.
+
+### Problema de Negocio y Preguntas de Investigación
+
+**Decisión del Negocio:**
+
+Las instituciones educativas buscan comprender los factores que más influyen en el rendimiento académico de los estudiantes.
+El objetivo es predecir el desempeño estudiantil y diseñar estrategias de intervención para apoyar a aquellos en riesgo de bajo rendimiento.
+Este análisis permitirá identificar las áreas de mejora y optimizar el uso de recursos educativos.
+
+**Preguntas de Investigación:**
+
+-   ¿Cuáles son los factores más importantes que afectan las calificaciones finales de los estudiantes?\
+-   ¿Se puede predecir el rendimiento académico en función de características internas o personales, externos o familiares y escolares de los estudiantes?\
+-   ¿Cómo podemos segmentar a los estudiantes en grupos según características similares para diseñar estrategias personalizadas?
+
+### Objetivos
+
+**Objetivo General:**
+
+Desarrollar un modelo predictivo para identificar los factores clave en el rendimiento académico de los estudiantes y prever el desempeño en exámenes finales.
+
+**Objetivos Específicos:**
+
+-   Seleccionar y analizar variables representativas de los factores internos o personales, externos o familiares y escolares que afectan el rendimiento académico.\
+-   Evaluar las variables seleccionadas para determinar si realizar un análisis de regresión o correlación, dependiendo de lo que sea más adecuado para identificar relaciones significativas y relevantes en el contexto del rendimiento académico.\
+-   Aplicar técnicas de clustering para descubrir posibles patrones y agrupaciones entre los estudiantes, segmentándolos según características clave.\
+-   Documentar los resultados y análisis en un reporte generado en R Markdown o Quarto Book, con explicaciones claras y estructuradas.\
+-   Desarrollar un informe interactivo en FlexDashboard, destacando los principales hallazgos y visualizaciones del análisis.
+
+### Fuentes de Datos
+
+**Descripción del Dataset:**
+
+El dataset `“StudentPerformanceFactors.csv”` contiene información sobre diversos factores que influyen en el rendimiento académico de los estudiantes, con un total de 6,607 filas y 20 columnas.
+La variable objetivo de este análisis es la calificación final o puntuación del examen (`Exam_Score`).
+
+**Variables Seleccionadas:**
+
+El análisis considerará variables representativas de los siguientes ámbitos:
+
+-   **Factores Internos o Personales:** Incluyendo características personales del estudiante como horas de estudio, nivel de motivación, hábitos de sueño y asistencia a clases.
+-   **Factores Externos de Apoyo Familiar o de Terceros:** Como el nivel de participación de los padres en la educación, su nivel educativo o el apoyo de tutores.\
+-   **Factores Dependientes de la Escuela:** Tales como el tipo de escuela y la calidad percibida de los profesores.
+
+Las variables finales seleccionadas para el modelado y análisis profundo se determinarán tras un análisis exploratorio de datos (EDA), en función de su relevancia y contribución al problema planteado.
+
+**Fuente del Dataset:** Kaggle\
+[Dataset aquí](https://www.kaggle.com/datasets/lainguyn123/student-performance-factors)
+
+### Plan de Trabajo
+
+La siguiente tabla describe el cronograma del proyecto en semanas:
+
+::: {style="text-align: center;"}
+<img src="imagenes/Tabla.jpg" alt="Tabla de Cronograma" style="width: 70%; border: 1px solid #ddd; border-radius: 5px; padding: 10px;"/>
+:::
+
+### Metodología
+
+El enfoque metodológico se basará en las fases de CRISP-DM (Cross-Industry Standard Process for Data Mining), adaptado al contexto del análisis del rendimiento académico de estudiantes.
+Estas fases guiarán el trabajo y garantizarán un flujo estructurado y lógico en el desarrollo del proyecto.
+
+#### Comprensión del negocio
+
+-   Identificar las necesidades educativas y los objetivos del análisis: predecir el rendimiento académico, segmentar a los estudiantes y destacar factores clave que influyen en las calificaciones o puntuaciones de examen.
+-   Traducir estos objetivos en preguntas específicas:
+    -   ¿Cuáles son los factores más relevantes?
+    -   ¿Qué estrategias de intervención se pueden diseñar a partir de los resultados?
+
+#### Comprensión de los datos
+
+-   Exploración inicial del dataset para identificar su estructura, distribución de variables y posibles problemas de calidad (valores faltantes, atípicos, duplicados, etc.).
+-   Descripción general de las características de los estudiantes, incluyendo distribuciones por género, tipo de escuela, y nivel educativo de los padres, entre otros.
+
+#### Preparación de los datos
+
+-   Realizar limpieza de datos:
+    -   Manejo de valores faltantes mediante imputación o exclusión dependiendo del contexto.
+    -   Identificación y tratamiento de valores atípicos que puedan influir en los resultados del análisis.
+    -   Corrección de inconsistencias en los datos y eliminación de duplicados.
+-   Transformar las variables relevantes en formatos adecuados para el análisis (como codificación de variables categóricas).
+-   Seleccionar las variables representativas de los factores internos o personales, externos y dependientes de la escuela para los análisis posteriores.
+
+#### Análisis exploratorio de datos (EDA)
+
+-   Visualizar la distribución de la variable objetivo (`Exam_Score`) y otras variables relevantes mediante gráficos (histogramas, diagramas de dispersión, gráficos de cajas, etc.).
+-   Evaluar relaciones iniciales entre variables para identificar patrones generales y posibles correlaciones significativas.
+
+#### Modelado
+
+-   **Regresión o Correlación:** Dependiendo de los resultados del EDA, se decidirá si realizar un análisis de regresión lineal o un análisis de correlación. Solo se aplicará uno de ellos, según el que aporte mayor valor para comprender las relaciones entre las variables.
+-   **Clustering:** Se aplicará clustering para identificar agrupaciones naturales de estudiantes, considerando las variables seleccionadas en la preparación de los datos. Esto permitirá segmentar a los estudiantes y descubrir patrones en función de sus características.
+
+#### Evaluación
+
+-   Validar los resultados obtenidos en las fases anteriores, asegurando que responden a los objetivos iniciales.
+-   Analizar si las segmentaciones y patrones identificados son consistentes y útiles para tomar decisiones educativas.
+
+#### Implementación (Entregables)
+
+-   Generar un informe técnico en **R Markdown** o **Quarto Book**, documentando todo el análisis y resultados.
+-   Crear un informe visual interactivo utilizando **FlexDashboard**, destacando los hallazgos más relevantes para facilitar su interpretación final.
+
+### Tecnología
+
+**Gestión de Datos:**
+
+El Dataset fue descargado de Kaggle, aparentemente ya preprocesado.
+La transformación de datos se realizará utilizando R.
+
+**Lenguaje de Programación y Librerías:**
+
+-   R: Utilizado como lenguaje principal para el análisis estadístico, manipulación de datos y visualización.
+
+-   Librerías Relevantes:
+
+1.  **`dplyr`**: Manipulación eficiente de datos.
+2.  **`ggplot2`**: Creación de gráficos personalizables y de alta calidad.
+3.  **`tidyr`**: Transformación y ordenamiento de datos.
+4.  **`corrplot`**: Visualización de matrices de correlación.
+5.  **`caret`**: Entrenamiento y validación de modelos predictivos.
+6.  **`broom`**: Resumen y conversión de modelos estadísticos en tibbles.
+7.  **`fastDummies`**: Generación de variables dummy para codificación categórica.
+8.  **`car`**: Evaluación de supuestos estadísticos, como colinealidad y homocedasticidad.
+9.  **`lmtest`**: Pruebas de hipótesis en modelos lineales, como Breusch-Pagan.
+10. **`patchwork`**: Composición de múltiples gráficos en una sola visualización.
+11. **`kableExtra`**: Creación de tablas estilizadas para informes.
+
+**Plataforma de Desarrollo:**
+
+RStudio para desarrollo, ejecución de código y generación de informes en R Markdown y FlexDashboard.
+
+**Control de Versiones:**
+
+Uso de GitHub para documentar el progreso y mantener el historial de versiones en:
+
+`https://github.com/SolFlor/ProyectoCienciaDeDatos/`

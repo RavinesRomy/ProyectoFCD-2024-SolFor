@@ -1,0 +1,452 @@
+---
+title: "Modelo de Regresión Lineal Múltiple"
+---
+
+```{r, echo=FALSE}
+# Configuración general del documento
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Cargar librerías
+suppressWarnings(suppressMessages(source("librerias.R")))
+```
+
+## Justificación del Modelo
+
+En el ámbito educativo, identificar los factores que influyen en el rendimiento académico es crucial para implementar estrategias de mejora y apoyo personalizado. Este análisis tiene como objetivo evaluar cómo diferentes factores internos, externos y escolares afectan la Puntuación de Examen de los estudiantes, con el propósito de generar recomendaciones prácticas.
+
+El modelo de regresión lineal múltiple es adecuado porque permite analizar simultáneamente el efecto de múltiples variables independientes sobre la variable dependiente, controlando la influencia de cada una.
+
+### Preguntas que Responde el Modelo
+
+Este modelo de regresión lineal busca responder preguntas clave como:
+
+-   ¿Qué variables influyen significativamente en la Puntuación de Examen?
+
+-   ¿Se puede predecir el rendimiento académico en función de características internas o personales, externos o familiares y escolares de los estudiantes?
+
+-   ¿Qué transformaciones mejoran la capacidad predictiva del modelo?
+
+### Análisis de Relaciones Bivariadas
+
+Antes de construir el modelo, se evaluaron las relaciones bivariadas entre la Puntuación de Examen y cada variable independiente durante el análisis exploratorio. Esto permite seleccionar las variables relevantes y justificar su inclusión en el modelo.
+
+#### Factores Internos o Personales
+
+**Asistencia**:\
+Es la variable con la mayor correlación positiva con la Puntuación de Examen (0.58). Aunque su distribución no es normal, la relación es clara y lógica: mayor asistencia implica mayor exposición a contenido y prácticas académicas. Se evaluarán versiones transformadas (logarítmica y raíz cuadrada) para mejorar la linealidad.
+
+**Horas de Estudio**:\
+Presenta una correlación positiva moderada (0.45) y una distribución aproximadamente normal. Los resultados observados muestran que más horas de estudio están consistentemente asociadas a mejores calificaciones.
+
+**Nivel de Motivación**:\
+Aunque inicialmente se consideró relevante, no mostró diferencias significativas en la puntuación entre los niveles de motivación. Por esta razón, no se incluirá en el modelo final.
+
+#### Factores Externos
+
+**Sesiones de Tutoría**: La correlación es leve (0.16), con un leve aumento en la mediana de las calificaciones a partir de 4 sesiones. Sin embargo, la presencia de valores atípicos sugiere una relación no completamente lineal. Se evaluará la versión logarítmica para abordar esta distribución sesgada.
+
+**Involucramiento Parental**:\
+El análisis ANOVA confirmó diferencias significativas entre los niveles de involucramiento (p \< 0.001), mostrando una leve tendencia ascendente desde "Bajo" hacia "Alto". Esta variable será incluida en el modelo.
+
+#### Factores Escolares
+
+**Calidad del Profesor**:\
+Aunque presenta una relación débil con la puntuación, se evaluará su inclusión porque podría interactuar con otras variables.
+
+**Tipo de Escuela**: No mostró diferencias significativas entre escuelas públicas y privadas (p \> 0.05, T-test), por lo que no se incluirá en el modelo.
+
+## Preparación de las Variables
+
+### Transformaciones de Variables
+
+En el apartado **"Preparación de Datos"**, se realizaron las transformaciones necesarias y los datos procesados se almacenaron en el archivo `StudentPerformanceFactors_Processed.csv`. Estas transformaciones incluyen:
+
+#### Transformación de Variables Numéricas:
+
+\- Se aplicaron transformaciones logarítmica (log1p), raíz cuadrada (sqrt) y Box-Cox para la variables **Asistencia** y logarítmica (log1p) para **Sesiones de Tutoría**. Estas versiones transformadas se almacenaron como columnas adicionales con nombres descriptivos: `Asistencia_log`, `Asistencia_sqrt`, `Asistencia_boxcox` y `Sesiones_Tutoria_log`.
+
+#### Codificación de Variables Categóricas:
+
+\- Se aplicó **One-Hot Encoding** a variables como **Involucramiento Parental**, **Nivel de Motivacion**, **Calidad del Profesor** y **Tipo de Escuela**, eliminando la columna de referencia para evitar multicolinealidad.
+
+### Normalización de Variables Numéricas
+
+Aunque las transformaciones ya se realizaron, las variables numéricas seleccionadas (**Horas de Estudio, Asistencia y Sesiones de Tutoría**) deben normalizarse antes de ajustar el modelo. Este paso adicional, realizado mediante **z-score**, garantiza que todas las variables tengan una escala uniforme, con **media igual a 0 y desviación estándar igual a 1**. La normalización es crucial para evitar que variables con valores más grandes tengan mayor peso en el modelo. Además, asegura que los coeficientes sean comparables entre sí y facilita la interpretación de los resultados, especialmente en un contexto como la regresión lineal múltiple, donde la escala de las variables puede influir significativamente en el desempeño del modelo.
+
+#### Implementación Normalización:
+
+```{r}
+# Se realizaron transformaciones antes descritas en apartado Preparación de Datos (preparacion.qmd), que se almacenaron en "StudentPerformanceFactors_Processed.csv"
+
+# Forzar regeneración si es necesario
+regenerar_csv <- FALSE  # Cambiar a TRUE si quieres que se ejecute siempre
+
+if (!file.exists("StudentPerformanceFactors_Processed.csv") || regenerar_csv) {
+  source("preparacion_inicial.R")
+}
+
+# Cargar el archivo CSV preparado
+student_data <- read.csv("StudentPerformanceFactors_Processed.csv")
+```
+
+```{r}
+# Normalización de variables numéricas seleccionadas
+student_data_normalized <- student_data %>%
+  mutate(across(c(Horas_Estudio, Asistencia, Sesiones_Tutoria), scale))
+
+# Verificar normalización
+summary(student_data_normalized)
+```
+
+## Formulación de los Modelos
+
+Con base en el análisis exploratorio y las relaciones bivariadas, se plantearon dos enfoques para explicar la Puntuación de Examen:
+
+**Modelo Simple con Factores Internos**:\
+Se evaluará si las variables Asistencia y Horas de Estudio, que presentaron las correlaciones más fuertes, son suficientes para explicar la variabilidad de las puntuaciones.
+
+Para ajustar y evaluar los modelos de regresión lineal múltiple, se utilizarán:
+
+1\. **Variables originales normalizadas** para garantizar una escala uniforme y evitar que valores extremos afecten los coeficientes.
+
+2\. **Variables transformadas** cuando sea necesario para mejorar la linealidad y atender problemas de distribución.
+
+**Modelo Completo con los Tres Ámbitos (Interno, Externo y Escolar)**:\
+Además de las variables internas, se incluirán Involucramiento Parental, Sesiones de Tutoría y Calidad del Profesor para analizar su efecto adicional.
+
+Este enfoque permitirá determinar si un modelo más simple es adecuado o si la inclusión de otros factores agrega valor predictivo significativo.
+
+## Modelo Simple (Factores Internos)
+
+```{r, fig.width=6, fig.height=4}
+# Visualizar ajuste del modelo
+grafico_modelo_simple <- ggplot(student_data_normalized, aes(x = Asistencia, y = Puntuacion_Examen)) +
+  geom_point(color = "#5BC0EB", alpha = 0.7) + 
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, color = "dodgerblue", fill = "lightblue", alpha = 0.2) +
+  theme_minimal(base_size = 10) +
+  labs(
+    title = "Relación entre Puntuación de Examen y Factores Internos", 
+    x = "Factores Internos", 
+    y = "Puntuación de Examen"
+  ) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank()
+  )
+
+# Mostrar el gráfico
+grafico_modelo_simple
+```
+
+### Ajuste del modelo
+
+```{r}
+# Ajustar modelo con factores internos original
+modelo_simple <- lm(Puntuacion_Examen ~ Asistencia + Horas_Estudio, data = student_data_normalized)
+
+# Resumen del modelo
+summary(modelo_simple)
+```
+
+### Interpretación
+
+**Impacto de la Asistencia**:\
+Un aumento de una unidad en la Asistencia (normalizada) se traduce en un incremento promedio de 2.28 puntos en la puntuación del examen, manteniendo constantes las demás variables. Esto demuestra que asistir más a clases tiene un impacto positivo y significativo en el rendimiento académico.
+
+**Impacto de las Horas de Estudio**:\
+Por cada unidad adicional en las Horas de Estudio, la puntuación promedio del examen aumenta en 1.75 puntos. Este efecto, también significativo, refuerza la relación esperada: dedicar más tiempo al estudio mejora los resultados.
+
+**Poder explicativo del modelo**:\
+El modelo explica el 53.7% de la variabilidad en las puntuaciones de examen. Aunque este porcentaje indica que las variables seleccionadas son relevantes, aún queda un 46.3% de la variabilidad sin explicar, lo que sugiere que otros factores importantes no han sido considerados. Además, el error estándar residual de 2.66 puntos refleja que las predicciones tienen una desviación moderada respecto a los valores observados.
+
+**Significancia del modelo**:\
+El modelo global es estadísticamente significativo (p \< 0.001), confirmando que las variables incluidas aportan información útil al análisis. Sin embargo, su capacidad predictiva es limitada, lo que indica la necesidad de incluir más factores relevantes para capturar mejor la complejidad del rendimiento académico.
+
+### Evaluación de supuestos
+
+Antes de entrar al análisis es útil mencionar qué supuestos básicos estamos evaluando en un modelo de regresión lineal:
+
+-   **Linealidad**: La relación entre las variables independientes y la dependiente debe ser lineal.
+-   **Independencia de los residuos**: Los residuos deben ser independientes unos de otros.
+-   **Normalidad de los residuos**: Los residuos deben seguir una distribución normal.
+-   **Homoscedasticidad**: La varianza de los residuos debe ser constante para todos los valores ajustados.
+-   **Ausencia de multicolinealidad**: Las variables independientes no deben estar fuertemente correlacionadas entre sí.
+
+#### Linealidad
+
+Ya comentado previamente en este apartado y con los gráficos en el capítulo de Análisis Exploratorio de Datos. De estos se deduce que existe una relación lineal positiva entre las variables.
+
+#### Normalidad de residuos
+
+Los residuos representan las diferencias entre los valores observados y los valores ajustados por el modelo. En esencia, nos indican qué tan bien se ajusta el modelo a los datos, residuos pequeños implican un buen ajuste, mientras que residuos grandes sugieren que el modelo no está capturando toda la variabilidad.
+
+```{r, fig.width=6, fig.height=4}
+# Normalidad de residuos (Q-Q Plot)
+qqnorm(residuals(modelo_simple))
+qqline(residuals(modelo_simple), col = "red")
+```
+
+El **Gráfico Q-Q** muestra algunas desviaciones en los valores extremos, pero en general, los residuos están razonablemente alineados con la línea de referencia. Esto indica que la normalidad de los residuos es aceptable.
+
+```{r, fig.width=6, fig.height=4}
+# Histograma de residuos
+hist(residuals(modelo_simple), breaks = 10, main = "Distribución de Residuos", col = "dodgerblue",
+     xlab = "Residuos", ylab = "Frecuencia")
+```
+
+El **Histograma de Residuos** confirma que la mayoría de los residuos están centrados alrededor de cero. Sin embargo, los valores extremos positivos y negativos destacan, lo que sugiere que el modelo no captura toda la complejidad de la variabilidad en los datos.
+
+#### Homocedasticidad
+
+Se utiliza la prueba de Breusch-Pagan, una prueba estadística que evalúa si los residuos de un modelo de regresión tienen **varianza constante** (es decir, si cumplen el supuesto de homocedasticidad).
+
+-   **Homoscedasticidad**: Significa que la variabilidad de los residuos es más o menos igual para todos los valores predichos por el modelo. Es un supuesto importante porque asegura que el modelo es consistente y confiable.
+
+-   **Heterocedasticidad**: Es lo contrario; la variabilidad de los residuos cambia dependiendo del valor predicho (puede verse en gráficos de residuos con patrones en forma de cono o abanico).
+
+```{r, fig.width=6, fig.height=4}
+# Gráfico de residuos vs valores ajustados
+plot(fitted(modelo_simple), residuals(modelo_simple), 
+     main = "Residuos vs Valores Ajustados", 
+     xlab = "Valores Ajustados", ylab = "Residuos", 
+     pch = 20, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+```
+
+```{r}
+# Prueba de Breusch-Pagan
+bptest(modelo_simple)
+```
+
+El gráfico de residuos vs. valores ajustados muestra que los residuos están razonablemente dispersos alrededor de la línea horizontal. Aunque se observa una ligera mayor dispersión en los valores ajustados más altos, esto no representa un patrón claro de heterocedasticidad.
+
+Esta observación es consistente con el resultado del test de Breusch-Pagan, que no fue significativo (p = 0.5031), no hay suficiente evidencia para rechazar la hipótesis nula de homocedasticidad. Respaldando que la variabilidad de los residuos es constante y que el supuesto de homocedasticidad se cumple razonablemente.
+
+#### Multicolinealidad
+
+```{r}
+# Factores de inflación de la varianza (VIF)
+vif(modelo_simple)
+```
+
+Los **valores de VIF** para ambas variables (Asistencia y Horas de Estudio) son aproximadamente 1, indicando que no hay problemas de multicolinealidad en este modelo. esto ya habia sido evaluado en en el capítulo de Preparacion de los Datos.
+
+## Comparación del Modelo Simple con Variable Transformada
+
+Dado que la variable Asistencia no tiene una distribución normal y considerando la desviación en los valores extremos observada en los residuos, se evaluará este mismo modelo simple, cambiando la variable Asistencia por sus versiones transformadas previamente `Asistencia_log`, `Asistencia_sqrt` y `Asistencia_boxcox`, que fueron analizados en el capítulo de `Preparación de los Datos`. Estas transformaciones permitirán analizar si pueden mejorar el ajuste y la capacidad predictiva del modelo.
+
+### Ajuste de Modelos
+
+```{r}
+# Ajustar modelos con transformaciones logarítmica, raíz cuadrada y Box-Cox
+modelo_simple_log <- lm(Puntuacion_Examen ~ Asistencia_log + Horas_Estudio, data = student_data_normalized)
+modelo_simple_sqrt <- lm(Puntuacion_Examen ~ Asistencia_sqrt + Horas_Estudio, data = student_data_normalized)
+modelo_simple_boxcox <- lm(Puntuacion_Examen ~ Asistencia_boxcox + Horas_Estudio, data = student_data_normalized)
+```
+
+```{r, fig.width=12, fig.height=5}
+# Crear gráficos comparativos
+library(ggplot2)
+# Gráficos
+grafico_log <- ggplot(student_data_normalized, aes(x = Asistencia_log, y = Puntuacion_Examen)) +
+  geom_point(color = "#5BC0EB", alpha = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, color = "dodgerblue", fill = "lightblue", alpha = 0.2) +
+  theme_minimal() +
+  labs(title = "Modelo Logarítmico", x = "Asistencia (Log)", y = "Puntuación de Examen")
+
+grafico_sqrt <- ggplot(student_data_normalized, aes(x = Asistencia_sqrt, y = Puntuacion_Examen)) +
+  geom_point(color = "#5BC0EB", alpha = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, color = "dodgerblue", fill = "lightblue", alpha = 0.2) +
+  theme_minimal() +
+  labs(title = "Modelo Raíz Cuadrada", x = "Asistencia (Raíz Cuadrada)", y = "Puntuación de Examen")
+
+grafico_boxcox <- ggplot(student_data_normalized, aes(x = Asistencia_boxcox, y = Puntuacion_Examen)) +
+  geom_point(color = "#5BC0EB", alpha = 0.7) +
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, color = "dodgerblue", fill = "lightblue", alpha = 0.2) +
+  theme_minimal() +
+  labs(title = "Modelo Box-Cox", x = "Asistencia (Box-Cox)", y = "Puntuación de Examen")
+
+# Mostrar gráficos
+library(gridExtra)
+grid.arrange(grafico_log, grafico_sqrt, grafico_boxcox, ncol = 3)
+```
+
+### Resumen de Modelos
+
+```{r}
+# Resúmenes
+summary_log <- summary(modelo_simple_log)
+summary_sqrt <- summary(modelo_simple_sqrt)
+summary_boxcox <- summary(modelo_simple_boxcox)
+
+# Extraer R^2 ajustado
+r2_log <- summary_log$adj.r.squared
+r2_sqrt <- summary_sqrt$adj.r.squared
+r2_boxcox <- summary_boxcox$adj.r.squared
+
+# Crear tabla comparativa
+library(knitr)
+comparacion_modelos <- data.frame(
+  Modelo = c("Logarítmico", "Raíz Cuadrada", "Box-Cox"),
+  `R^2 Ajustado` = c(r2_log, r2_sqrt, r2_boxcox),
+  `Error Estándar Residual` = c(summary_log$sigma, summary_sqrt$sigma, summary_boxcox$sigma)
+)
+
+kable(comparacion_modelos, format = "markdown", caption = "Comparación de Modelos con Transformaciones de Asistencia")
+```
+
+El modelo transformado con Box-Cox tiene el mayor R2 ajustado (0.5376), pero la diferencia respecto a las transformaciones logarítmica (0.5366) y raíz cuadrada (0.5373) es prácticamente insignificante. Esto sugiere que las transformaciones no mejoran de forma significativa la capacidad explicativa del modelo. De manera similar, el error estándar residual es casi idéntico entre los modelos con las transformaciones, reforzando la idea de que no aportan ventajas sustanciales.
+
+### Evaluación de Supuestos
+
+#### Normalidad de Residuos
+
+```{r, fig.width=12, fig.height=5}
+# Q-Q Plots para los tres modelos
+qq_log <- ggplot() +
+  geom_qq(aes(sample = residuals(modelo_simple_log)), color = "#5BC0EB") +
+  geom_qq_line(aes(sample = residuals(modelo_simple_log)), color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot: Modelo Logarítmico")
+
+qq_sqrt <- ggplot() +
+  geom_qq(aes(sample = residuals(modelo_simple_sqrt)), color = "#5BC0EB") +
+  geom_qq_line(aes(sample = residuals(modelo_simple_sqrt)), color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot: Modelo Raíz Cuadrada")
+
+qq_boxcox <- ggplot() +
+  geom_qq(aes(sample = residuals(modelo_simple_boxcox)), color = "#5BC0EB") +
+  geom_qq_line(aes(sample = residuals(modelo_simple_boxcox)), color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot: Modelo Box-Cox")
+
+# Mostrar gráficos
+grid.arrange(qq_log, qq_sqrt, qq_boxcox, ncol = 3)
+```
+
+Los gráficos Q-Q se ven bastante similares en los tres casos y no altera la calidad del modelo.
+
+#### Homocedasticidad
+
+```{r}
+# Pruebas de Breusch-Pagan
+library(lmtest)
+homocedasticidad <- data.frame(
+  Modelo = c("Logarítmico", "Raíz Cuadrada", "Box-Cox"),
+  `p-valor` = c(bptest(modelo_simple_log)$p.value, bptest(modelo_simple_sqrt)$p.value, bptest(modelo_simple_boxcox)$p.value)
+)
+
+kable(homocedasticidad, format = "markdown", caption = "Pruebas de Homocedasticidad")
+```
+
+La prueba de Breusch-Pagan no encuentra evidencia de heterocedasticidad en ninguno de los modelos. Esto implica que la varianza de los residuos es constante y que todos los modelos cumplen con este supuesto fundamental de la regresión lineal, al igual que el modelo simple original.
+
+### Interpretación
+
+Las transformaciones realizadas sobre la variable "Asistencia" no generan un impacto significativo en el ajuste del modelo ni en el cumplimiento de los supuestos básicos. Esto indica que, en este caso, la variable "Asistencia" en su forma original ya representa adecuadamente su relación con la "Puntuación de Examen", y las transformaciones no son necesarias para mejorar el modelo.
+
+## Modelo Completo (Factores Internos, Externos y Escolares)
+
+Para evaluar si la inclusión de variables adicionales de los ámbitos externo y escolar mejora la capacidad explicativa del modelo, se ajustó un modelo completo que incluye las variables **Asistencia**, **Horas de Estudio**, **Sesiones de Tutorías**, **Involucramiento Parental** (Alto y Medio), y **Calidad del Profesorado** (Alta y Media). Las variables categóricas fueron transformadas previamente mediante One-Hot Encoding.
+
+### Ajuste del Modelo
+
+```{r}
+# Ajustar el modelo completo
+modelo_completo <- lm(Puntuacion_Examen ~ Horas_Estudio + Asistencia + Sesiones_Tutoria + 
+                         Involucramiento_Parental_Alto + Involucramiento_Parental_Medio + 
+                         Calidad_Profesor_Alta + Calidad_Profesor_Media, 
+                      data = student_data)
+
+# Resumen del modelo
+summary(modelo_completo)
+```
+
+```{r}
+# Resumen de métricas clave
+resumen_modelos <- data.frame(
+  Modelo = c("Simple", "Completo"),
+  `R^2 Ajustado` = c(summary(modelo_simple)$adj.r.squared, summary(modelo_completo)$adj.r.squared),
+  `Error Estándar Residual` = c(summary(modelo_simple)$sigma, summary(modelo_completo)$sigma)
+)
+
+library(knitr)
+kable(resumen_modelos, format = "markdown", caption = "Resumen Comparativo de Modelos")
+```
+
+#### Interpretación
+
+**Impacto de las Variables Adicionales**:\
+El modelo completo incluye factores adicionales de los ámbitos externo y escolar, que aportan valor predictivo:
+
+-   **Sesiones de Tutoría** tiene un coeficiente positivo significativo (0.49), lo que indica que cada unidad adicional en las tutorías se asocia con un aumento promedio de 0.49 puntos en la puntuación del examen.
+
+-   **Involucramiento Parental Alto** tiene un impacto positivo mayor (1.87 puntos) que el **Involucramiento Parental Medio** (0.87 puntos), sugiriendo que un mayor nivel de participación de los padres mejora los resultados académicos.
+
+-   **Calidad del Profesor Alta** tiene un coeficiente positivo significativo (0.94), mientras que la **Calidad del Profesor Media** también contribuye positivamente, aunque en menor medida (0.38 puntos).
+
+**Poder Explicativo**:\
+El modelo completo explica el **59.5%** de la variabilidad en las puntuaciones del examen (R² ajustado = 0.595), lo que representa una mejora del **5.8%** respecto al modelo simple (R² ajustado = 0.537). Además, el error estándar residual disminuyó de 2.66 a 2.49, reflejando un ajuste ligeramente más preciso.
+
+### Evaluación de supuestos
+
+#### Normalidad de Residuos
+
+```{r, fig.width=6, fig.height=4}
+# Q-Q Plot del modelo completo
+qqnorm(residuals(modelo_completo))
+qqline(residuals(modelo_completo), col = "red")
+```
+
+El **Gráfico Q-Q** muestra que los residuos están razonablemente alineados con la línea de referencia, aunque persisten ligeras desviaciones en los valores extremos. Esto sugiere que la normalidad de los residuos se mantiene aceptable.
+
+#### Homocedasticidad
+
+```{r}
+# Prueba de Breusch-Pagan para el modelo completo
+library(lmtest)
+bptest(modelo_completo)
+```
+
+El **Test de Breusch-Pagan** no rechaza la hipótesis nula de homocedasticidad (( p \> 0.05 )), indicando que la varianza de los residuos es constante
+
+### Interpretación
+
+**Mejora del Modelo Completo**
+
+La inclusión de variables adicionales mejora el ajuste del modelo, aumentando el R²  ajustado en un **5.78%** y reduciendo el error estándar residual en **0.17 puntos**. Esto sugiere que los factores externos y escolares aportan información adicional relevante para explicar el rendimiento académico.
+
+**Significancia de las Variables**
+
+Las variables **Sesiones de Tutoría**, **Involucramiento Parental Alto** y **Calidad del Profesorado Alta** parecen ser predictoras significativas en el modelo completo. 
+
+**Cumplimiento de Supuestos**
+
+Ambos modelos cumplen con los supuestos de homocedasticidad y normalidad de los residuos, lo que garantiza la validez de las conclusiones.
+
+## Conclusión
+
+El análisis comenzó evaluando las variables internas más correlacionadas con el rendimiento académico, como la **Asistencia** y las **Horas de Estudio**. Aunque se probaron transformaciones de estas variables, no se observaron mejoras significativas en el modelo, lo que confirma que su relación con la **Puntuación de Examen** es adecuada en su forma original. Posteriormente, se incorporaron variables de los ámbitos externo y escolar, como las **Sesiones de Tutoría**, el **Involucramiento Parental** y la **Calidad del Profesorado**, lo que permitió una mejora leve en el ajuste del modelo.
+
+Dado que el rendimiento educativo está influido por múltiples factores, este modelo logra explicar una parte significativa de la variabilidad en las calificaciones, pero aún deja un porcentaje considerable sin abordar. Esto sugiere la necesidad de explorar otras variables relevantes no consideradas en este estudio o porque la naturaleza del examen puede ser diferente a lo habitual.
+
+Sin embargo, los resultados confirman que los factores tradicionalmente considerados importantes, como asistir a clases, dedicar tiempo al estudio, recibir tutorías, contar con un buen profesorado y el apoyo de los padres, tienen un impacto positivo y significativo en el rendimiento académico. Por lo tanto, se recomienda fomentar estas prácticas mediante políticas de apoyo y programas educativos específicos, como:
+
+-   **Fomentar la asistencia regular a clases**, asegurando que las sesiones sean significativas y relevantes para los estudiantes.
+
+-   **Ampliar el acceso a tutorías personalizadas**, como una estrategia clave para reforzar áreas donde los estudiantes muestran dificultades.
+
+-   **Promover el involucramiento activo de los padres en el proceso educativo**, dada su influencia positiva en el desempeño estudiantil.
+
+-   **Capacitar y fortalecer al cuerpo docente**, asegurando estándares elevados de calidad en la enseñanza.
+
+En resumen, este análisis destaca la importancia de los factores internos, externos y escolares en el rendimiento académico, proporcionando una base para diseñar estrategias que refuercen estos elementos. Además, sugiere la necesidad de futuros estudios que consideren una perspectiva más amplia para capturar la complejidad multifactorial que caracteriza al rendimiento educativo.
+
+Como reflexión final, este trabajo subraya lo arduo que puede ser el manejo de datos para obtener resultados significativos. Un área de mejora sería profundizar en el tratamiento de valores atípicos en etapas previas del análisis, ya que esto podría impactar positivamente en la distribución de los residuos y, potencialmente, en la precisión del modelo.

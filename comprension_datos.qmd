@@ -1,0 +1,73 @@
+---
+title: "Comprensión de los Datos"
+---
+
+## Evaluación Inicial del Dataset
+
+A continuación, se realiza una evaluación inicial del dataset cargado desde el archivo CSV. Esta evaluación incluye información básica como número de filas y columnas, nombres de las columnas y su estructura general.
+
+**Evaluación del Número de Filas y Columnas**
+
+```{r}
+# Cargar el archivo CSV
+student_data <- read.csv("StudentPerformanceFactors.csv")
+
+# Ver número de filas y columnas
+dim(student_data)
+```
+
+El dataset cuenta con un total de `r nrow(student_data)` filas y `r ncol(student_data)` columnas.
+
+**Nombres de las Columnas**
+
+```{r}
+# Listar nombres de las columnas
+colnames(student_data)
+```
+
+Los nombres de las columnas son descriptivos, lo que facilita identificar las variables y su propósito dentro del análisis.
+
+**Visualización Inicial del Dataset**
+
+```{r}
+# Mostrar las primeras filas del dataset
+head(student_data)
+```
+
+**Estructura de las Variables**
+
+```{r}
+# Ver estructura del dataset
+str(student_data)
+```
+
+Se identificaron variables categóricas y numéricas.
+
+## Resumen de las Variables
+
+De las 20 variables totales, 7 son de tipo integer, es decir, se han almacenado como variables **numéricas discretas**. Sin embargo, en algunos casos, su naturaleza original es de **variable numérica continua**. Por ejemplo, las horas de estudio, la asistencia a clases y las horas de actividad física son variables que, conceptualmente, podrían tomar valores con decimales.
+
+A continuación, se presenta un resumen detallado de cada variable, su tipo y una breve descripción.
+
+| **Nombre de la Variable** | **Tipo** | **Descripción** |
+|------------------------|------------------------|------------------------|
+| `Hours_Studied` | Numérica Discreta | Número de horas dedicadas al estudio por semana. |
+| `Attendance` | Numérica Discreta | Porcentaje de asistencia a clases. |
+| `Exam_Score` | Numérica Discreta | Calificación obtenida en el examen final. |
+| `Gender` | Categórica Nominal | Género o Sexo del estudiante (`Female`, `Male`). |
+| `School_Type` | Categórica Nominal | Tipo de escuela a la que asiste el estudiante (`Public`, `Private`). |
+| `Parental_Involvement` | Categórica Ordinal | Nivel de participación de los padres en la educación (`Low`, `Medium`, `High`). |
+| `Motivation_Level` | Categórica Ordinal | Nivel de motivación del estudiante (`Low`, `Medium`, `High`). |
+| `Teacher_Quality` | Categórica Ordinal | Calidad percibida del profesor (`Low`, `Medium`, `High`). |
+| `Sleep_Hours` | Numérica Discreta | Horas promedio de sueño por noche. |
+| `Family_Income` | Categórica Ordinal | Nivel de ingresos familiares (`Low`, `Medium`, `High`). |
+| `Peer_Influence` | Categórica Ordinal | Influencia de los compañeros en el rendimiento (`Negative`, `Neutral`, `Positive`). |
+| `Extracurricular_Activities` | Categórica Nominal | Participación en actividades extracurriculares (`Yes`, `No`). |
+| `Previous_Scores` | Numérica Discreta | Calificaciones promedio obtenidas en evaluaciones previas. |
+| `Tutoring_Sessions` | Numérica Discreta | Número de sesiones de tutoría a las que asiste el estudiante. |
+| `Physical_Activity` | Numérica Discreta | Horas semanales dedicadas a actividades físicas. |
+| `Internet_Access` | Categórica Nominal | Acceso a internet en el hogar (`Yes`, `No`). |
+| `Learning_Disabilities` | Categórica Nominal | Presencia de discapacidades de aprendizaje (`Yes`, `No`). |
+| `Access_to_Resources` | Categórica Ordinal | Disponibilidad de recursos educativos (`Low`, `Medium`, `High`). |
+| `Distance_from_Home` | Categórica Ordinal | Distancia de la casa a la escuela (`Near`, `Moderate`, `Far`). |
+| `Parental_Education_Level` | Categórica Ordinal | Nivel educativo de los padres (`High School`, `College`, `Postgraduate`). |

@@ -1,0 +1,134 @@
+---
+title: "bbdd_sql"
+format: html
+---
+
+## Conexión a la Base de Datos
+
+Se realizó la conexión a la base de datos MySQL con Xampp para realizar consultas desde RStudio y extraer los datos requeridos. Esto permitió realizar consultas específicas y explorar características relevantes del conjunto de datos.
+
+```{r, echo=FALSE}
+# Configuración general del documento
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Cargar librerías
+suppressWarnings(suppressMessages(source("librerias.R")))
+```
+
+```{r}
+# Configurar la conexión a la base de datos
+
+usuario <- "root"
+passwd <- ""
+nombrebd <- "student_performance"
+servidor <- "localhost"
+puerto <- 3306
+
+mibd <- dbConnect(MySQL(), user = usuario, password = passwd, dbname = nombrebd, host = servidor, port = puerto)
+```
+
+La conexión fue exitosa, y se procedió a realizar consultas para explorar los datos almacenados en la base de datos.
+
+## Análisis Preliminar de Datos
+
+Se realizaron algunas consultas para intentar entender mejor la composición del conjunto de datos.
+
+**Consulta 1: Cantidad de estudiantes por género**
+
+```{r, echo=TRUE}
+# Ejecutar la consulta en MySQL
+consulta_genero <- dbGetQuery(mibd, "SELECT Gender, COUNT(*) AS total_count 
+                                   FROM student_performance_data 
+                                   GROUP BY Gender 
+                                   ORDER BY total_count DESC")
+```
+
+```{r}
+# Mostrar la tabla con los resultados
+kable(consulta_genero, caption = "Cantidad de estudiantes por género") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Se observa una mayor representación de estudiantes masculinos, lo cual puede ser relevante para comparaciones de rendimiento académico.
+
+**Consulta 2: Promedio de calificaciones por tipo de escuela**
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Ejecutar la consulta en MySQL
+consulta_promedio_escuela <- dbGetQuery(mibd, "SELECT School_Type, ROUND(AVG(Exam_Score), 2) AS avg_score 
+                                              FROM student_performance_data 
+                                              GROUP BY School_Type 
+                                              ORDER BY avg_score DESC")
+```
+
+```{r}
+kable(consulta_promedio_escuela, caption = "Promedio de calificaciones por tipo de escuela") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+El promedio de calificaciones es muy similar entre ambos tipos de escuela, debe ser analizado en detalle más adelante, aunque podría no ser un factor diferenciador significativo.
+
+**Consulta 3: Distribución de estudiantes por nivel de apoyo parental**
+
+```{r, echo=TRUE}
+# Ejecutar la consulta en MySQL
+consulta_apoyo_parental <- dbGetQuery(mibd, "SELECT Parental_Involvement, COUNT(*) AS student_count 
+                                            FROM student_performance_data 
+                                            GROUP BY Parental_Involvement 
+                                            ORDER BY student_count DESC")
+```
+
+```{r}
+kable(consulta_apoyo_parental, caption = "Cantidad de estudiantes por nivel de apoyo parental") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+La mayoría de los estudiantes reporta un nivel medio de apoyo parental, lo que puede ser un punto de partida para analizar la influencia del apoyo familiar en el rendimiento.
+
+**Consulta 4: Promedio de calificaciones según horas de estudio**
+
+```{r, echo=TRUE}
+# Ejecutar la consulta en MySQL
+consulta_horas_estudio <- dbGetQuery(mibd, "
+SELECT 
+    CASE 
+        WHEN Hours_Studied < 10 THEN '0-9 horas'
+        WHEN Hours_Studied BETWEEN 10 AND 20 THEN '10-20 horas'
+        WHEN Hours_Studied BETWEEN 21 AND 30 THEN '21-30 horas'
+        ELSE 'Más de 30 horas'
+    END AS study_hours_range,
+    ROUND(AVG(Exam_Score), 2) AS avg_score
+FROM student_performance_data
+GROUP BY study_hours_range
+ORDER BY avg_score DESC")
+```
+
+```{r}
+kable(consulta_horas_estudio, caption = "Promedio de calificaciones por rango de horas de estudio") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Los estudiantes con más de 30 horas de estudio tienen los promedios más altos, lo que indica una relación positiva entre el tiempo dedicado al estudio y el rendimiento académico, que es esperable.
+
+**Consulta 5: Cantidad de diferentes niveles de motivación**
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Ejecutar la consulta en MySQL
+consulta_niveles_motivacion <- dbGetQuery(mibd, "SELECT COUNT(DISTINCT Motivation_Level) AS unique_motivation_levels 
+                                                 FROM student_performance_data")
+```
+
+```{r}
+kable(consulta_niveles_motivacion, caption = "Cantidad de niveles de motivación distintos") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Hay 3 niveles de motivación distintos.
+
+```{r, include=FALSE}
+dbDisconnect(mibd)
+```
+
+Se desconecta la base de datos.

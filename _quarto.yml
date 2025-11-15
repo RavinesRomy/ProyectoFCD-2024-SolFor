@@ -1,0 +1,43 @@
+project:
+  type: book
+  
+book: 
+  chapters:
+  - index.qmd
+  - introduccion.qmd
+  - part: "Datos"
+    chapters: 
+      - comprension_datos.qmd
+      - eda.qmd
+  - part: "Modelos"
+    chapters: 
+      - preparacion.qmd
+      - regresion_lineal_multiple.qmd
+      - regresion_logistica.qmd
+      - referencias.qmd
+  page-footer: 
+    left: "Copyright 2024, Macarena Flores" 
+    right: 
+      - icon: github
+        href: https://github.com/
+      - icon: twitter 
+        href: https://twitter.com/ 
+  
+  
+format:
+  html:
+    theme: cerulean
+    toc: true
+    toc-title: "Índice"
+    toc-location: left
+    toc-depth: 6
+    number-sections: true
+    embed-resources: true
+    code-fold: show
+    css: styles.css
+    math: katex
+
+editor: visual
+
+
+

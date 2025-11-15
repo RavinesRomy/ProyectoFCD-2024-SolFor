@@ -1,0 +1,311 @@
+---
+title: "Modelo de Regresión Logística"
+---
+
+```{r, echo=FALSE}
+# Configuración general del documento
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Cargar librerías
+suppressWarnings(suppressMessages(source("librerias.R")))
+```
+
+## Introducción
+
+La regresión logística es un método estadístico utilizado para predecir una variable categórica binaria en función de varias variables explicativas. Este análisis permite clasificar el rendimiento académico de los estudiantes en dos categorías: Buen Rendimiento y Mal Rendimiento, en función de diversos factores internos, familiares y escolares.
+
+## Preparación de Variables
+
+Para este análisis, se reutiliza la base de datos preparada previamente para la regresión lineal múltiple, `StudentPerformanceFactors_Processed.csv`. Esta base incluye las transformaciones necesarias, como el **One-Hot Encoding** aplicado a las variables categóricas **Involucramiento Parental** y **Calidad del Profesor**.
+
+Además, las variables numéricas seleccionadas, **Horas de Estudio**, **Asistencia** y **Sesiones de Tutoria** se normalizan nuevamente dentro de este capítulo para asegurar que estén en la misma escala, lo que garantiza consistencia en el análisis.
+
+```{r}
+# Cargar datos preparados
+student_data <- read.csv("StudentPerformanceFactors_Processed.csv")
+
+# Normalización de variables numéricas seleccionadas
+student_data <- student_data %>%
+  mutate(across(c(Horas_Estudio, Asistencia, Sesiones_Tutoria), scale))
+```
+
+### Transformación de la Variable Dependiente
+
+La variable dependiente **Buen Rendimiento** refleja el rendimiento académico de los estudiantes y se deriva de la **Puntuación de Examen**, que varía entre 55 y 101 puntos. Para clasificar a los estudiantes, se establece un **punto de corte en 70**:
+
+- Los estudiantes con puntuaciones iguales o superiores a 70 se clasifican como de **Buen Rendimiento** (1). 
+- Los estudiantes con puntuaciones inferiores a 70 se clasifican como de **Mal Rendimiento** (0).
+
+Este umbral es adecuado para separar a los estudiantes en dos categorías según su desempeño, dado que todos aprobaron el examen. Esta transformación convierte una variable continua en una categórica binaria, lo que permite su análisis mediante regresión logística.
+
+```{r}
+# Crear la variable dependiente categórica basada en el umbral de 70 puntos
+student_data <- student_data %>%
+  mutate(Buen_Rendimiento = ifelse(Puntuacion_Examen >= 70, 1, 0))
+```
+
+```{r}
+# Crear los datos
+tabla_distribucion <- data.frame(
+  Categoria = c("Mal Rendimiento", "Buen Rendimiento"),
+  Frecuencia = c(4797, 1581)
+)
+
+# Calcular el total de observaciones
+total_observaciones <- sum(tabla_distribucion$Frecuencia)
+
+# Agregar la columna de porcentaje a la tabla
+tabla_distribucion <- tabla_distribucion %>%
+  mutate(Porcentaje = round((Frecuencia / total_observaciones) * 100, 2))
+
+# Presentar la tabla con formato profesional
+tabla_distribucion %>%
+  knitr::kable(
+    caption = "Distribución de la Variable 'Buen Rendimiento'",
+    col.names = c("Categoría", "Frecuencia", "Porcentaje (%)"),
+    align = c("c", "c", "c")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  kableExtra::add_header_above(c(" " = 3)) %>%
+  kableExtra::row_spec(0, bold = TRUE, background = "#DCE6F1")
+```
+
+```{r}
+# Crear los datos
+tabla_distribucion <- data.frame(
+  Categoria = c("Mal Rendimiento", "Buen Rendimiento"),
+  Frecuencia = c(4797, 1581)
+)
+
+# Crear gráfico ajustado
+grafico_highchart <- highchart() %>%
+  hc_chart(type = "column", backgroundColor = "transparent") %>% # Fondo transparente
+  hc_title(
+    text = "Distribución de la Variable 'Buen Rendimiento'", 
+    align = "center", 
+    style = list(fontSize = "16px", fontWeight = "bold")
+  ) %>%
+  hc_xAxis(
+    categories = tabla_distribucion$Categoria, 
+    title = list(text = "Rendimiento Académico"),
+    lineColor = "black",
+    lineWidth = 1,
+    tickColor = "black"
+  ) %>%
+  hc_yAxis(
+    title = list(text = "Frecuencia"), 
+    gridLineWidth = 0, # Sin líneas de cuadrícula
+    lineColor = "black",
+    lineWidth = 1,
+    tickColor = "black"
+  ) %>%
+  hc_add_series(
+    name = "Frecuencia",
+    data = tabla_distribucion$Frecuencia,
+    colorByPoint = TRUE,
+    colors = c("#FFA07A", "#5BC0EB"),
+    dataLabels = list(enabled = FALSE) # Elimina los números sobre las columnas
+  ) %>%
+  hc_tooltip(
+    useHTML = TRUE,
+    pointFormat = "<b>{point.category}</b><br>Frecuencia: {point.y}" # Simplifica el texto del tooltip
+  ) %>%
+  hc_plotOptions(column = list(
+    borderWidth = 1,
+    borderColor = "black", # Borde negro en las barras
+    pointPadding = 0.2, # Separación de las barras
+    groupPadding = 0.2
+  ))
+
+# Mostrar gráfico
+grafico_highchart
+```
+
+La mayoría de los estudiantes se encuentran en la categoría de Mal Rendimiento (75%), mientras que el 25% restante pertenece a la categoría de Buen Rendimiento. Este desequilibrio en las clases es importante considerar durante el analisis del modelo.
+
+## Ajuste del Modelo Logístico
+
+Este modelo incorpora factores internos, externos y escolares considerados relevantes para predecir el rendimiento académico.
+ 
+```{r}
+# Ajustar modelo logístico completo
+modelo_log_completo <- glm(Buen_Rendimiento ~ Horas_Estudio + Asistencia + Sesiones_Tutoria + 
+                             Involucramiento_Parental_Alto + Involucramiento_Parental_Medio + 
+                             Calidad_Profesor_Alta + Calidad_Profesor_Media, 
+                           data = student_data, family = binomial)
+
+# Resumen del modelo
+summary(modelo_log_completo)
+```
+
+## Interpretación del Modelo
+
+### Odds Ratio
+
+Los odds ratios permiten interpretar cómo varía la probabilidad de obtener un buen rendimiento académico cuando una variable independiente aumenta en una unidad, manteniendo las demás constantes. Se calculan transformando los coeficientes del modelo logístico (β) mediante la función exponencial, facilitando su comprensión.
+
+Interpretación General:\
+- **Odds Ratio > 1**: Aumenta la probabilidad del evento (buen rendimiento). Por ejemplo, un odds ratio de 1.5 significa un aumento del 50% en las probabilidades.\
+- **Odds Ratio = 1**: No hay efecto; la variable no altera las probabilidades.\
+- **Odds Ratio < 1**: Disminuye la probabilidad del evento. Por ejemplo, un odds ratio de 0.8 representa una reducción del 20% en las probabilidades.
+
+**Intervalos de Confianza**:\
+Los intervalos de confianza indican la precisión de los odds ratios. Si el intervalo excluye el valor 1, el efecto es estadísticamente significativo.
+
+```{r}
+# Calcular Odds Ratio e intervalos de confianza
+exp_coef <- exp(coef(modelo_log_completo))
+ci <- exp(confint(modelo_log_completo))
+
+# Crear tabla resumen
+odds_ratios <- data.frame(
+  Variable = names(exp_coef),
+  `Odds Ratio` = exp_coef,
+  `CI Inferior` = ci[, 1],
+  `CI Superior` = ci[, 2]
+)
+odds_ratios
+```
+
+- **Horas de Estudio**: Aumentar una hora incrementa los odds de buen rendimiento en 7.42 veces.
+
+- **Asistencia**: Incrementa los odds en 12.58 veces, siendo el factor más influyente del modelo.
+
+- **Sesiones de Tutoría**: Participar en tutorías aumenta los odds en 1.91 veces, mostrando un efecto positivo pero menor.
+
+- **Involucramiento Parental**:\
+  - **Alto**: Incrementa los odds en 7.23 veces respecto al bajo.
+  - **Medio**: Incrementa los odds en 2.51 veces respecto al bajo. Esto refleja que el apoyo parental es más relevante cuando es alto.
+
+- **Calidad del Profesor**:\
+  - **Alta**: Incrementa los odds en 3.18 veces respecto a la baja.
+  - **Media**: Incrementa los odds en 1.84 veces respecto a la baja. Esto sugiere que una percepción positiva de la calidad docente favorece el rendimiento.
+  
+En este modelo todos los intervalos de confianza excluyen el valor 1, lo que respalda la relevancia estadística de las variables. Entre los factores, la asistencia y las horas de estudio destacan como los más importantes.
+
+### Bondad de Ajuste
+
+Evaluamos el ajuste del modelo utilizando dos métricas clave:
+
+#### Prueba de Hosmer-Lemeshow
+Esta prueba evalúa si las probabilidades predichas por el modelo se ajustan bien a las observaciones reales.
+
+```{r}
+# Prueba de Hosmer-Lemeshow
+hoslem_test <- hoslem.test(student_data$Buen_Rendimiento, fitted(modelo_log_completo))
+hoslem_test
+```
+
+Un valor p inferior a 0.05 indicaría que el modelo no se ajusta perfectamente a los datos observados. Esto podría señalar la necesidad de refinar el modelo o considerar interacciones adicionales.
+
+#### Criterio de Información de Akaike (AIC)
+El AIC del modelo es 3403.7, lo que indica un equilibrio razonable entre el ajuste y la complejidad del modelo.
+
+## Evaluación del Modelo
+
+### Curva ROC
+
+La curva ROC y el área bajo la curva (AUC) son métricas fundamentales para evaluar la capacidad del modelo de clasificar correctamente los casos positivos y negativos. 
+
+- Una AUC cercana a 1 indica un excelente desempeño del modelo.
+- Una AUC cercana a 0.5 indica un modelo sin capacidad de discriminación.
+
+```{r, fig.width=6, fig.height=4}
+# Calcular predicciones
+predicciones <- predict(modelo_log_completo, type = "response")
+roc_curve <- roc(student_data$Buen_Rendimiento, predicciones)
+
+# Graficar curva ROC
+plot(roc_curve, main = "Curva ROC", col = "#5BC0EB")
+abline(a = 0, b = 1, lty = 2, col = "#FFA07A")
+auc(roc_curve)
+```
+
+La AUC obtenida es de `r auc(roc_curve)`, lo que indica que el modelo tiene una capacidad aceptable para discriminar entre estudiantes con buen y mal rendimiento académico.
+
+
+### Matriz de Confusión
+
+La matriz de confusión es una herramienta fundamental para evaluar el desempeño de modelos de clasificación. Permite comparar las predicciones del modelo con las clases reales y obtener información clave como:
+
+- **Verdaderos Positivos (VP)**: Casos correctamente clasificados como Buen Rendimiento.\
+- **Verdaderos Negativos (VN)**: Casos correctamente clasificados como Mal Rendimiento.\
+- **Falsos Positivos (FP)**: Casos incorrectamente clasificados como Buen Rendimiento.\
+- **Falsos Negativos (FN)**: Casos incorrectamente clasificados como Mal Rendimiento.
+
+Estos valores son la base para calcular métricas como precisión, sensibilidad y especificidad.
+
+Utilizamos un umbral de 0.5 para clasificar las predicciones.
+
+```{r}
+# Calcular predicciones como probabilidades
+predicciones <- predict(modelo_log_completo, type = "response")
+
+# Clasificación basada en un umbral de 0.5
+pred_clasificado <- ifelse(predicciones >= 0.5, 1, 0)
+
+# Construir la matriz de confusión
+confusion_matrix <- table(
+  Predicción = factor(pred_clasificado, labels = c("Mal Rendimiento", "Buen Rendimiento")),
+  Real = factor(student_data$Buen_Rendimiento, labels = c("Mal Rendimiento", "Buen Rendimiento"))
+)
+
+# Presentar la matriz de confusión en formato tradicional 2x2
+confusion_matrix %>%
+  knitr::kable(
+    caption = "Matriz de Confusión",
+    align = c("c", "c"),
+    col.names = c("Real", "Mal Rendimiento", "Buen Rendimiento")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  kableExtra::add_header_above(c(" " = 1, "Predicción" = 2))
+```
+
+### Métricas de Clasificación
+
+Para evaluar la calidad del modelo, calculamos las siguientes métricas:
+
+- **Precisión**: Proporción de predicciones correctas entre todos los casos predichos como positivos.
+- **Sensibilidad (Recall)**: Capacidad del modelo para identificar correctamente los casos positivos.
+- **Especificidad**: Capacidad del modelo para identificar correctamente los casos negativos.
+
+
+```{r}
+# Cálculo de métricas
+precision <- sum(pred_clasificado == 1 & student_data$Buen_Rendimiento == 1) / sum(pred_clasificado == 1)
+sensibilidad <- sum(pred_clasificado == 1 & student_data$Buen_Rendimiento == 1) / sum(student_data$Buen_Rendimiento == 1)
+especificidad <- sum(pred_clasificado == 0 & student_data$Buen_Rendimiento == 0) / sum(student_data$Buen_Rendimiento == 0)
+
+# Resumen de métricas
+data.frame(
+  Metrica = c("Precisión", "Sensibilidad", "Especificidad"),
+  Valor = c(precision, sensibilidad, especificidad)
+)
+```
+
+- **Precisión**: `r round(precision * 100, 2)`% de los casos clasificados como Buen Rendimiento fueron correctos.
+- **Sensibilidad**: El modelo identificó correctamente `r round(sensibilidad * 100, 2)`% de los estudiantes con Buen Rendimiento.
+- **Especificidad**: El modelo identificó correctamente `r round(especificidad * 100, 2)`% de los estudiantes con Mal Rendimiento.
+
+Estas métricas reflejan un desempeño adecuado del modelo, aunque podrían mejorarse mediante ajustes adicionales.
+
+
+## Conclusión
+
+La regresión logística permitió clasificar a los estudiantes según su rendimiento académico, destacando **Asistencia** y **Horas de Estudio** como los factores más relevantes, con un impacto significativo en el buen rendimiento, similar a la regresión lineal múltiple. En contraste, **Sesiones de Tutoría** mostró un efecto limitado, sugiriendo que su relevancia en el modelo es menor.
+
+Sin embargo, los resultados de la **Prueba de Hosmer-Lemeshow** (\(p < 0.05\)) indican que el modelo no se ajusta perfectamente a los datos observados, aunque el AUC y las métricas de clasificación, como sensibilidad y especificidad, muestran un desempeño razonable. Esto sugiere la necesidad de realizar ajustes para mejorar la capacidad predictiva del modelo.
+
+Como primera acción, podría eliminarse la variable **Sesiones de Tutoría** para simplificar el modelo y evaluar su impacto en el ajuste. Además, incorporar otras variables podría mejorar su desempeño.
+
+Este modelo resalta la importancia de factores clave como la asistencia y las horas de estudio, lo que brinda un punto de partida para diseñar intervenciones educativas prácticas. Sin embargo, debe refinarse para garantizar una mejor correlación con la realidad y una mayor utilidad en la toma de decisiones.

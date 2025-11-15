@@ -1,0 +1,50 @@
+---
+title: "Portada"
+author: "MFM-FCD-UAX@2024"
+published: false
+format: html
+css: styles.css
+---
+
+<!-- Logo -->
+
+<img src="imagenes/uax_logo_nuevo_0.png" alt="Logo Universidad" style="width: 450px; margin-bottom: 20px;"/>
+
+::: {#portada style="text-align: center; padding: 50px; background-color: #f9f9f9; border-radius: 10px;"}
+<!-- Título -->
+
+<h1 style="font-size: 2.5em; color: #0060AB;">
+
+Factores que afectan al Rendimiento Estudiantil
+
+</h1>
+:::
+
+<br>
+
+```{=html}
+<div class="row" style="display: flex; align-items: center;">
+
+  <div style="flex: 1; text-align: center;">
+    <img src="imagenes/portada.jpeg" alt="Cover Image" style="max-width: 100%; height: auto; border-radius: 8px;">
+  </div>
+
+  <div style="flex: 1; padding-left: 2em;">
+<!-- Detalles -->
+
+<p style="font-size: 1.2em; color: #333;">
+
+<strong>Autora:</strong> Macarena Flores Morales<br> 
+
+<strong>Curso:</strong> Fundamentos de la Ciencia de Datos<br>
+
+<strong>Profesora:</strong> Dra. Romy Rodríguez Ravines <br>
+
+<strong>Fecha:</strong> 24/12/2024
+
+</p>    <p>Este libro es el resultado del trabajo realizado a lo largo de la asignatura Fundamentos de la Ciencia de Datos del Grado Online en
+<a href="https://www.uax.com/titulaciones/grado-online-en-ciencia-de-datos-e-inteligencia-artificial" target="_blank">Inteligencia Artificial y Computación de la Universidad Alfonso X El Sabio</a>.</p>
+  </div>
+
+</div>
+```

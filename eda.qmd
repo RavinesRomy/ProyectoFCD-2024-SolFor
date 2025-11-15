@@ -1,0 +1,1048 @@
+---
+title: "Análisis Exploratorio de Datos"
+---
+
+```{r, echo=FALSE}
+# Configuración general del documento
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Cargar librerías
+suppressWarnings(suppressMessages(source("librerias.R")))
+```
+
+El objetivo del EDA es entender la composición de los datos y su calidad, e identificar patrones iniciales. A través del resumen estadístico, podemos visualizar características clave de cada variable y evaluar su relevancia para el modelo que se desarrollará más adelante.
+
+## Preparación Inicial de los Datos
+
+Se realizó la traducción de todas las variables a español, manteniendo las mayúsculas iniciales y separando las palabras con guión bajo. También se tradujeron las categorías de las variables a español. Además, las cadenas vacías fueron transformadas en valores NA para asegurar su correcto reconocimiento en los análisis posteriores. Como resultado, se generó un nuevo archivo: `StudentPerformanceFactors_Cleaned.csv`.
+
+```{r}
+# Las conversiones y transformaciones antes descritas se realizaron en el archivo:
+# preparacion_inicial.R y se genero el nuevo dataset `StudentPerformanceFactors_Cleaned.csv`, que se carga en este archivo a continuación.
+```
+
+También se realiza la transformación de las variables categóricas a factores para facilitar el análisis bivariado posterior.
+
+```{r}
+# Forzar regeneración si es necesario
+regenerar_csv <- FALSE  # Cambiar a TRUE si quieres que se ejecute siempre
+
+if (!file.exists("StudentPerformanceFactors_Cleaned.csv") || regenerar_csv) {
+  source("preparacion_inicial.R")
+}
+
+# Cargar el archivo CSV preparado
+student_data <- read.csv("StudentPerformanceFactors_Cleaned.csv")
+```
+
+```{r}
+# Convertir variables categóricas a factores con orden
+student_data$Nivel_Motivacion <- factor(student_data$Nivel_Motivacion, 
+                                        levels = c("Baja", "Media", "Alta"), 
+                                        ordered = TRUE)
+
+student_data$Involucramiento_Parental <- factor(student_data$Involucramiento_Parental, 
+                                                levels = c("Bajo", "Medio", "Alto"), 
+                                                ordered = TRUE)
+
+student_data$Calidad_Profesor <- factor(student_data$Calidad_Profesor,
+                                        levels = c("Baja", "Media", "Alta"), 
+                                        ordered = TRUE)
+
+student_data$Tipo_Escuela <- factor(student_data$Tipo_Escuela,
+                                    levels = c("Publica", "Privada")) 
+
+student_data$Sexo <- factor(student_data$Sexo, 
+                            levels = c("Femenino", "Masculino")) 
+
+student_data$Ingresos_Familiares <- factor(student_data$Ingresos_Familiares, 
+                                           levels = c("Bajo", "Medio", "Alto"), 
+                                           ordered = TRUE)
+
+student_data$Influencia_Companeros <- factor(student_data$Influencia_Companeros, 
+                                             levels = c("Negativa", "Neutral", "Positiva"), 
+                                             ordered = TRUE)
+
+student_data$Actividades_Extracurriculares <- factor(student_data$Actividades_Extracurriculares, 
+                                                     levels = c("No", "Si"), 
+                                           ordered = TRUE)
+
+student_data$Acceso_Internet <- factor(student_data$Acceso_Internet, 
+                                       levels = c("No", "Si"), 
+                                           ordered = TRUE)
+
+student_data$Discapacidades_Aprendizaje <- factor(student_data$Discapacidades_Aprendizaje, 
+                                                  levels = c("No", "Si"), 
+                                           ordered = TRUE)
+
+student_data$Nivel_Educativo_Padres <- factor(student_data$Nivel_Educativo_Padres, 
+                                              levels = c("Secundaria", "Universitaria", "Postgrado"), 
+                                              ordered = TRUE)
+
+student_data$Acceso_Recursos <- factor(student_data$Acceso_Recursos,
+                                       levels = c("Bajo", "Medio", "Alto"), 
+                                       ordered = TRUE)
+
+student_data$Distancia_Hogar <- factor(student_data$Distancia_Hogar,
+                                       levels = c("Cerca", "Moderado", "Lejos"), 
+                                       ordered = TRUE)
+```
+
+## Resumen Estadístico Descriptivo
+
+En la siguiente tabla resumen se observan las principales características del conjunto de datos relacionados con el rendimiento académico de estudiantes. Se exploran las 20 variables.
+
+El conjunto de datos nos dice:
+
+```{r}
+# Generar el resumen descriptivo
+df_summary <- dfSummary(student_data, 
+                        varnumbers = TRUE, 
+                        valid.col = TRUE, 
+                        na.col = TRUE, 
+                        graph.col = TRUE,
+                        style = "grid",
+                        plain.ascii = FALSE,
+                        headings = FALSE)
+
+# Mostrar el resumen
+print(df_summary, 
+      method = "render")
+```
+
+## Ámbitos de Análisis
+
+### Selección de Variables para el Análisis
+
+Para este análisis, la variable dependiente es **Puntuacion_Examen**. El resto de las variables se han clasificado en tres ámbitos principales según su relación con el problema de estudio.
+
+-   **Factores Internos o Personales:** Aquellas características que dependen directamente del estudiante, como sus hábitos y condiciones individuales.
+
+-   **Factores Externos:** Factores que provienen del entorno familiar o social del estudiante.
+
+-   **Factores Dependientes de la Escuela:** Variables relacionadas con el contexto institucional y escolar.
+
+#### Definición de Variables
+
+Se listan los nombres de las variables utilizadas en cada ámbito:
+
+-   **Factores Internos o Personales:**
+
+    -   **Sexo**: Género del estudiante (Categórica Nominal).
+
+    -   **Horas_Estudio**: Número de horas dedicadas al estudio por semana (Numérica Discreta).
+
+    -   **Nivel_Motivacion**: Nivel de motivación del estudiante (Categórica Ordinal).
+
+    -   **Horas_Sueno**: Horas promedio de sueño por noche (Numérica Discreta).
+
+    -   **Puntuaciones_Previas**: Calificaciones promedio obtenidas en evaluaciones previas (Numérica Discreta).
+
+    -   **Actividad_Fisica**: Horas semanales dedicadas a actividades físicas (Numérica Discreta).
+
+    -   **Asistencia**: Porcentaje de asistencia a clases (Numérica Discreta).
+
+    -   **Discapacidades_Aprendizaje**: Presencia de discapacidades de aprendizaje (Categórica Nominal).
+
+-   **Factores Externos:**
+
+    -   **Involucramiento_Parental**: Nivel de participación de los padres en la educación (Categórica Ordinal).
+
+    -   **Nivel_Educativo_Padres**: Nivel educativo de los padres (Categórica Ordinal).
+
+    -   **Sesiones_Tutoria**: Número de sesiones de tutoría a las que asiste el estudiante (Numérica Discreta).
+
+    -   **Ingresos_Familiares**: Nivel de ingresos familiares (Categórica Ordinal).
+
+    -   **Influencia_Companeros**: Influencia de los compañeros en el rendimiento (Categórica Ordinal).
+
+    -   **Actividades_Extracurriculares**: Participación en actividades extracurriculares (Categórica Nominal).
+
+    -   **Acceso_Internet**: Acceso a internet en el hogar (Categórica Nominal).
+
+    -   **Acceso_Recursos**: Disponibilidad de recursos educativos (Categórica Ordinal).
+
+-   **Factores Dependientes de la Escuela:**
+
+    -   **Tipo_Escuela**: Tipo de escuela a la que asiste el estudiante (Categórica Nominal).
+
+    -   **Calidad_Profesor**: Calidad percibida del profesor (Categórica Ordinal).
+
+    -   **Distancia_Hogar**: Distancia de la casa a la escuela (Categórica Ordinal).
+
+## Análisis Univariado
+
+### Análisis de la Variable Dependiente
+
+El análisis de la variable dependiente, la puntuación de examen, es crucial para establecer un punto de referencia en este estudio. Conocer su distribución permite identificar patrones clave, como concentración de valores y posibles atípicos, que influirán en la comprensión de las relaciones con las variables explicativas.
+
+```{r, fig.width=8, fig.height=4}
+# Calcular estadísticas descriptivas
+media <- mean(student_data$Puntuacion_Examen, na.rm = TRUE)
+mediana <- median(student_data$Puntuacion_Examen, na.rm = TRUE)
+minimo <- min(student_data$Puntuacion_Examen, na.rm = TRUE)
+maximo <- max(student_data$Puntuacion_Examen, na.rm = TRUE)
+desviacion <- sd(student_data$Puntuacion_Examen, na.rm = TRUE)
+
+# Crear texto del resumen
+resumen_texto <- paste(
+  "Estadísticas de Puntuación de Examen:",
+  paste("Media:", round(media, 2)),
+  paste("Mediana:", mediana),
+  paste("Mínimo:", minimo),
+  paste("Máximo:", maximo),
+  paste("Desviación Estándar:", round(desviacion, 2)),
+  sep = "\n"
+)
+
+# Crear histograma
+grafico_histograma <- ggplot(student_data, aes(x = Puntuacion_Examen)) + 
+  geom_histogram(bins = 15, fill = "#C39BD3", color = "#7D3C98") + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Distribución de la Puntuación de Examen", 
+       x = "Puntuación de Examen", 
+       y = "Frecuencia") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank()
+  )
+
+# Combinar el histograma y el texto en columnas
+grid.arrange(
+  grafico_histograma,
+  textGrob(resumen_texto, gp = gpar(fontsize = 10, fontface = "bold")),
+  ncol = 2,
+  widths = c(2, 1) # Ajustar proporción entre el gráfico y el texto
+)
+```
+
+**Puntuación de Examen:**
+
+La variable dependiente puntuación de examen muestra una concentración de datos entre 60 y 75 puntos. Se observa una media de **67.2**, una mediana de **67**, un mínimo de **55** y un máximo de **101**, con una desviación estándar de **3.89**. La distribución presenta algunos valores atípicos, principalmente por encima de 80 puntos, lo que sugiere la presencia de estudiantes con rendimientos significativamente altos.
+
+Después de esta descripción y establecer su relevancia como referencia para los análisis posteriores, se procede a evaluar los factores que pueden influir en ella. Para esto, las variables explicativas han sido agrupadas en tres ámbitos: factores internos o personales, factores externos y factores dependientes de la escuela. A continuación, se presenta un análisis univariado de las variables más relevantes dentro de cada ámbito.
+
+### Analisis de Factores Personales del Estudiante
+
+Se analizan dos variables relacionadas directamente con el rendimiento del estudiante, una numérica continua (horas de estudio) y una categórica (nivel de motivación).
+
+**Horas de Estudio**:\
+Sabemos que el tiempo dedicado al estudio tiene una relación directa con el rendimiento académico. Los estudiantes que dedican más tiempo a estudiar suelen obtener mejores calificaciones.
+
+```{r, fig.width=6, fig.height=4}
+# Histograma de Horas de Estudio
+ggplot(student_data, aes(x =  Horas_Estudio)) + 
+  geom_histogram(bins = 15, fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal() + 
+  labs(title =  "Distribución de Horas de Estudio", 
+       x = "Horas de Estudio", 
+       y = "Frecuencia") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(), 
+    panel.background = element_blank() 
+  )
+```
+
+**Descripción:** La distribución de las horas de estudio es aproximadamente normal, con la mayoría de los estudiantes dedicando entre 15 y 25 horas por semana. Esto sugiere que, en promedio, los estudiantes mantienen un tiempo de estudio estable. Los extremos en la distribución, con menos de 10 o más de 30 horas, son minoritarios y podrían indicar grupos con necesidades diferentes en su rendimiento académico.
+
+**Asistencia**:\
+La asistencia a clases puede ser un factor relevante para el rendimiento académico, ya que facilita la comprensión de los conceptos enseñados y la aplicación práctica de los mismos.
+
+```{r, fig.width=6, fig.height=4}
+# Histograma de Asistencia
+ggplot(student_data, aes(x = Asistencia)) + 
+  geom_histogram(bins = 15, fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal() + 
+  labs(title = "Distribución de Asistencia", 
+       x = "Asistencia", 
+       y = "Frecuencia") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(), 
+    panel.background = element_blank() 
+  )
+```
+
+**Descripción:** La distribución de la asistencia no presenta una forma normal. Se observa que los valores están uniformemente distribuidos entre 60% y 100%, sin picos claros. La mayoría de los estudiantes tiene una asistencia alta, especialmente por encima del 70%. Esta uniformidad sugiere que la asistencia es un factor homogéneo en el grupo analizado, con pocos valores extremos.
+
+**Nivel de Motivación**:\
+La motivación influye en cómo los estudiantes se enfrentan a los retos académicos. Los estudiantes motivados tienden a poner más esfuerzo y son más persistentes.
+
+```{r, fig.width=6, fig.height=4}
+# Distribución del Nivel de Motivación
+ggplot(student_data, aes(x = Nivel_Motivacion)) + 
+    geom_bar(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+    labs(title = "Nivel de Motivación entre Estudiantes", 
+         x = "Nivel de Motivación", 
+         y = "Cantidad de Estudiantes") +
+    theme_minimal() +
+    theme(
+        plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 10),
+        axis.line = element_line(color = "black"),
+        axis.ticks = element_line(color = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank()
+    )
+```
+
+**Descripción:** La mayoría de los estudiantes tienen un nivel de motivación media, seguido por un grupo con motivación baja y un menor número con motivación alta. Esto sugiere que, aunque la motivación media es común, se podrían implementar estrategias para aumentar la motivación y mejorar el rendimiento académico. La presencia de estudiantes con motivación baja resalta la importancia de apoyos adicionales.
+
+### Analisis de Factores de Externos
+
+Se analizan dos variables que afectan el rendimiento académico, una numérica discreta (sesiones de tutorias) y una categórica (involucramiento parental)
+
+**Involucramiento Parental**:\
+Los padres que participan activamente en la educación de sus hijos pueden motivar a los estudiantes y ayudarlos a superar obstáculos.\
+
+```{r, fig.width=6, fig.height=4}
+# Distribución del Involucramiento Parental
+ggplot(student_data, aes(x = Involucramiento_Parental)) + 
+  geom_bar(fill = "#FFA07A", color = "#CD5C5C", alpha = 0.8) + 
+  labs(title = "Nivel de Involucramiento Parental", 
+       x = "Involucramiento Parental", 
+       y = "Cantidad de Estudiantes") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank()
+  )
+```
+
+**Descripción:** Se observa que la mayoría de los estudiantes tienen un nivel de involucramiento parental medio, mientras que una menor proporción cuenta con un apoyo alto o bajo. Esta distribución sugiere que, en general, los padres están moderadamente involucrados en el proceso educativo de sus hijos. El análisis de esta variable es importante, ya que un mayor o menor involucramiento podría tener un impacto en la motivación y el rendimiento académico de los estudiantes.
+
+**Sesiones de Tutoría**:\
+El apoyo de un tutor externo ayuda a los estudiantes a abordar dificultades específicas y a mejorar sus calificaciones en áreas donde podrían tener problemas.
+
+```{r, fig.width=6, fig.height=4}
+# Histograma de Sesiones de Tutoría
+ggplot(student_data, aes(x = Sesiones_Tutoria)) + 
+  geom_histogram(bins = 10, fill = "#FFA07A", color = "#CD5C5C", alpha = 0.8) + 
+  labs(title = "Distribución de Sesiones de Tutoría", 
+       x = "Sesiones de Tutoría", 
+       y = "Frecuencia") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank()
+  )
+```
+
+**Descripción:** El gráfico muestra que la mayoría de los estudiantes tiene entre 0 y 2 sesiones de tutoría, con pocos casos por encima de este rango. Las sesiones de 7 y 8 podrían considerarse valores atípicos debido a su baja frecuencia. Esta asimetría sugiere que la distribución no es equilibrada, lo que implica diferencias significativas en el acceso a tutorías.
+
+### Analisis de Factores Dependientes de la Escuela
+
+Se analizan dos variables categóricas, la calidad del profesor y el tipo de escuela (pública o privada).
+
+**Calidad del Profesor**:\
+La percepción de la calidad del profesorado puede influir en la experiencia de aprendizaje del estudiante. Un buen profesor puede inspirar y motivar a los estudiantes a rendir mejor.
+
+```{r, fig.width=6, fig.height=4}
+# Distribución de la Calidad Percibida del Profesor
+ggplot(student_data, aes(x = Calidad_Profesor)) + 
+  geom_bar(fill = "#66CDAA", color = "#4CAF50", alpha = 0.8) + 
+  labs(title = "Calidad del Profesor Percibida por los Estudiantes", 
+       x = "Calidad del Profesor", 
+       y = "Cantidad de Estudiantes") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank()
+  )
+```
+
+**Descripción:** Este gráfico muestra la distribución de la calidad del profesor según la percepción de los estudiantes. La mayoría de los estudiantes evalúa la calidad de sus profesores como media, seguida de un grupo que la percibe como alta y un menor número que la considera baja. Los valores faltantes (NA) representan una pequeña proporción, 78 casos (1.2%), visto en el resumen estadístico. Sera comentado más adelante.
+
+**Tipo de Escuela**:\
+Aunque las escuelas privadas suelen tener más recursos que las públicas, el tipo de escuela afecta el entorno educativo y, por ende, el rendimiento de los estudiantes.
+
+```{r, fig.width=4, fig.height=4}
+# Distribución del Tipo de Escuela
+ggplot(student_data, aes(x = Tipo_Escuela)) + 
+  geom_bar(fill = "#66CDAA", color = "#4CAF50", alpha = 0.8) + 
+  labs(title = "Distribución del Tipo de Escuela", 
+       x = "Tipo de Escuela", 
+       y = "Cantidad de Estudiantes") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank()
+  )
+
+```
+
+**Descripción:** El gráfico muestra la distribución del tipo de escuela a la que asisten los estudiantes, diferenciando entre pública y privada. La mayoría de los estudiantes proviene de escuelas públicas, mientras que un menor porcentaje asiste a escuelas privadas. Esta diferencia en la cantidad de estudiantes según el tipo de escuela es importante, ya que el entorno educativo puede influir en el rendimiento académico y en el acceso a recursos.
+
+## Análisis Bivariado
+
+### Factores Personales del Estudiante
+
+#### Variables Numéricas
+
+##### Uso de Gráficos de Dispersión
+
+Se analiza la relación entre las variables numéricas personales del estudiante (como Horas de Estudio, Asistencia y Puntuación Previa) y la variable dependiente, Puntuación de Examen. Aunque estas variables se encuentran registradas como discretas en el dataset, su naturaleza es continua, lo que permite analizar patrones y tendencias.
+
+Se utilizan gráficos de dispersión (scatterplots) para visualizar la relación entre las variables. Estos gráficos son útiles cuando las variables presentan un rango amplio de valores, ya que permiten observar si existe una tendencia o correlación en la nube de puntos, como un aumento o disminución de las puntuaciones a medida que varían la variable.
+
+```{r, fig.width=12, fig.height=5}
+# Crear los gráficos
+# Horas de Estudio vs Puntuación
+grafico1 <- ggplot(student_data, aes(x = Horas_Estudio, y = Puntuacion_Examen)) + 
+  geom_point(color = "#5BC0EB", alpha = 0.7) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Relación entre Horas de Estudio y Puntuación", 
+       x = "Horas de Estudio", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank()
+  )
+
+# Asistencia vs Puntuación
+grafico2 <- ggplot(student_data, aes(x = Asistencia, y = Puntuacion_Examen)) + 
+  geom_point(color = "#5BC0EB", alpha = 0.7) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Relación entre Asistencia y Puntuación", 
+       x = "Asistencia", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank()
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico1, grafico2, ncol = 2)
+```
+
+```{r, fig.width=12, fig.height=5}
+# Puntuaciones Previas vs Puntuación
+grafico3 <- ggplot(student_data, aes(x = Puntuaciones_Previas, y = Puntuacion_Examen)) + 
+  geom_point(color = "#5BC0EB", alpha = 0.7) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Relación entre Puntuaciones Previas y Puntuación", 
+       x = "Puntuaciones Previas", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank()
+  )
+
+# Mostrar gráfico
+grid.arrange(grafico3, ncol = 2)
+```
+
+```{r, echo=FALSE}
+# Calcular correlaciones Pearson
+cor_pearson_horas <- cor(student_data$Horas_Estudio, student_data$Puntuacion_Examen, method = "pearson")
+cor_pearson_asistencia <- cor(student_data$Asistencia, student_data$Puntuacion_Examen, method = "pearson")
+cor_pearson_previas <- cor(student_data$Puntuaciones_Previas, student_data$Puntuacion_Examen, method = "pearson")
+
+# Calcular correlaciones Spearman
+cor_spearman_horas <- cor(student_data$Horas_Estudio, student_data$Puntuacion_Examen, method = "spearman")
+cor_spearman_asistencia <- cor(student_data$Asistencia, student_data$Puntuacion_Examen, method = "spearman")
+cor_spearman_previas <- NA # Spearman no aplica para Puntuaciones Previas
+
+# Crear la tabla final
+correlaciones <- data.frame(
+  Variable = c("Horas de Estudio", "Asistencia", "Puntuaciones Previas"),
+  Pearson = c(round(cor_pearson_horas, 3), round(cor_pearson_asistencia, 3), round(cor_pearson_previas, 3)),
+  Spearman = c(round(cor_spearman_horas, 3), round(cor_spearman_asistencia, 3), cor_spearman_previas)
+)
+
+# Mostrar la tabla con formato
+knitr::kable(correlaciones, 
+             caption = "Correlación entre Variables Numéricas y Puntuación de Examen", 
+             digits = 3, align = "c") %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover"))
+```
+
+-   **Horas de Estudio**:\
+    La variable presenta una distribución aproximadamente normal. En el gráfico de dispersión, se observa una relación lineal positiva moderada con la variable dependiente. La correlación de Pearson (0.445) y Spearman (0.481) confirman una asociación positiva moderada. Esto sugiere que, en general, a mayor cantidad de horas de estudio, las puntuaciones tienden a aumentar, aunque la dispersión de los puntos indica la influencia de otros factores adicionales.
+
+-   **Asistencia**:\
+    La variable muestra una distribución no normal, con una tendencia uniforme entre 60% y 100%. En el gráfico de dispersión, se aprecia una relación positiva moderada. La correlación de Pearson (0.581) y la de Spearman (0.672) confirman una asociación positiva moderada a fuerte. Dado que la variable no cumple con la condición de normalidad, el test no paramétrico (Spearman) es más apropiado para describir la relación. Esto sugiere que la asistencia es un factor relevante para el análisis del rendimiento académico. La no normalidad en la distribución también podría implicar una relación no lineal, que podría explorarse mediante transformaciones en etapas posteriores.
+
+-   **Puntuaciones Previas**:\
+    La variable presenta una distribución no normal y, en el gráfico de dispersión, no se observa una relación clara con la variable dependiente. La correlación de Pearson (0.175) indica una asociación muy débil o inexistente, lo que sugiere que las puntuaciones previas no son un buen predictor directo del rendimiento actual. El patrón de dispersión uniforme y sin pendiente confirma la falta de relación significativa.
+
+Las variables **Asistencia** y **Horas de Estudio** muestran la mayor relación con la Puntuación de Examen, destacándose la asistencia como el factor más relevante. Por otro lado, las **Puntuaciones Previas** no aportan significativamente. Para el caso de Asistencia, dada su distribución no normal, se recomienda explorar relaciones no lineales o aplicar transformaciones en etapas posteriores del análisis.
+
+##### Uso de Gráficos de Caja
+
+Se analiza la relación entre variables numéricas con un rango más limitado de valores únicos (como Horas de Sueño y Actividad Física) y la variable dependiente, Puntuación de Examen. Aunque estas variables también están registradas como discretas, su rango más acotado hace que los gráficos de caja (boxplots) sean más adecuados para visualizar su comportamiento.
+
+Los gráficos de caja permiten comparar la distribución de las puntuaciones entre los distintos valores de estas variables, identificando posibles diferencias en la mediana, la dispersión de los datos y la presencia de valores atípicos. Se presentan gráficos de caja para las variables discretas y tambien las categóricas más adelante:
+
+```{r, fig.width=14, fig.height=5}
+# Boxplot Horas de Sueño vs Puntuación
+grafico4 <- ggplot(student_data, aes(x = factor(Horas_Sueno), y = Puntuacion_Examen, fill = factor(Horas_Sueno))) + 
+  geom_boxplot(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Horas de Sueño vs Puntuación", 
+       x = "Horas de Sueño", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+# Boxplot Actividad Física vs Puntuación
+grafico5 <- ggplot(student_data, aes(x = factor(Actividad_Fisica), y = Puntuacion_Examen, fill = factor(Actividad_Fisica))) + 
+  geom_boxplot(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Actividad Física vs Puntuación", 
+       x = "Actividad Física", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico4, grafico5, ncol = 2)
+```
+
+Las variables **Horas de Sueño** y **Actividad Física** muestran un comportamiento uniforme, sin una relación significativa con la Puntuación de Examen. Las medianas de las puntuaciones se mantienen constantes en todos los niveles de ambas variables, con una dispersión similar entre los grupos y sin variabilidad notable.
+
+Por lo tanto, **Horas de Sueño y Actividad Física** no parecen ser factores relevantes para predecir la Puntuación de Examen, ya que no presentan patrones consistentes ni diferencias significativas entre los grupos.
+
+#### Variables Categóricas
+
+```{r, fig.width=14, fig.height=5}
+# Sexo vs Puntuación (Boxplot)
+grafico6 <- ggplot(student_data, aes(x = Sexo, y = Puntuacion_Examen, fill = Sexo)) + 
+  geom_boxplot(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Sexo vs Puntuación", 
+       x = "Sexo", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Nivel de Motivación vs Puntuación (Boxplot)
+grafico7 <- ggplot(student_data, aes(x = Nivel_Motivacion, y = Puntuacion_Examen, fill = Nivel_Motivacion)) + 
+  geom_boxplot(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Nivel de Motivación vs Puntuación", 
+       x = "Nivel de Motivación", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico6, grafico7, ncol = 2)
+```
+
+```{r, fig.width=14, fig.height=5}
+# Discapacidades de Aprendizaje vs Puntuación (Boxplot)
+grafico8 <- ggplot(student_data, aes(x = Discapacidades_Aprendizaje, y = Puntuacion_Examen, fill = Discapacidades_Aprendizaje)) + 
+  geom_boxplot(fill = "#5BC0EB", color = "#0A4275", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Discapacidades de Aprendizaje vs Puntuación", 
+       x = "Discapacidades de Aprendizaje", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico8, ncol = 2)
+```
+
+-   **Sexo y Nivel de Motivación**:\
+    Muestran un comportamiento uniforme. Las medianas de las puntuaciones son prácticamente constantes entre los grupos, sin patrones claros ni diferencias significativas.
+
+-   **Discapacidades de Aprendizaje**:\
+    Aunque la diferencia es mínima, se observa una mediana ligeramente más alta en el grupo "No" (sin discapacidades). Sin embargo, la dispersión de las puntuaciones dentro de ambos grupos es amplia y relativamente similar, lo que podría indicar que esta variable tiene un efecto muy leve o no significativo.
+
+En general, **Sexo, Nivel de Motivación y Discapacidades de Aprendizaje** no parecen ser factores relevantes para predecir la Puntuación de Examen. La leve diferencia observada en **Discapacidades de Aprendizaje** podría analizarse con pruebas estadísticas en etapas posteriores para confirmar si es significativa.
+
+### Factores Externos
+
+#### Variable Numérica Discreta
+
+```{r, fig.width=14, fig.height=5}
+# Sesiones de Tutoría vs Puntuación (Boxplot)
+grafico9 <- ggplot(student_data, aes(x = factor(Sesiones_Tutoria), y = Puntuacion_Examen, fill = factor(Sesiones_Tutoria))) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Sesiones de Tutoría vs Puntuación", 
+       x = "Sesiones de Tutoría", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Mostrar el gráfico
+grid.arrange(grafico9, ncol = 2)
+
+```
+
+En las **Sesiones de Tutoría**, el análisis revela una tendencia leve pero interesante entre el número de sesiones de tutoría y la Puntuación de Examen. La mediana de las puntuaciones muestra un ligero aumento conforme incrementa el número de sesiones, especialmente a partir de 4 sesiones. Sin embargo, la dispersión de las puntuaciones es considerable en todos los grupos.
+
+En los niveles bajos de tutoría (0-2 sesiones), se observan valores atípicos asociados a puntuaciones altas, lo que sugiere que algunos estudiantes lograron calificaciones excepcionales con poca asistencia a tutorías. Además, el histograma muestra una cola hacia la derecha, indicando una baja frecuencia de estudiantes que asistieron a 6 o más sesiones.
+
+Aunque la variable **Sesiones de Tutoría** muestra un pequeño aumento en las puntuaciones para los estudiantes que asisten a más tutorías, la relación no es completamente clara. La presencia de valores atípicos en niveles bajos y la baja frecuencia en niveles altos sugieren que esta variable requiere análisis adicionales para evaluar su relevancia como predictor en etapas posteriores.
+
+#### Variables Categóricas
+
+```{r, fig.width=14, fig.height=5}
+# Gráfico 10: Involucramiento Parental vs Puntuación
+grafico10 <- ggplot(student_data, aes(x = Involucramiento_Parental, y = Puntuacion_Examen, fill = Involucramiento_Parental)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Involucramiento Parental vs Puntuación", 
+       x = "Involucramiento Parental", 
+       y = "Puntuación de Examen") +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+# Mostrar gráficos 
+grid.arrange(grafico10, ncol = 2)
+```
+
+**Involucramiento Parental**:\
+Las medianas de las puntuaciones son similares entre los niveles de involucramiento parental (Bajo, Medio y Alto), con una leve tendencia ascendente al pasar de Bajo a Alto. Existe alta dispersión en todos los grupos. Dado la relevancia de esta variables por la influencia que pueden tener los padres se realizan más estudios.
+
+*Análisis de la varianza (ANOVA)*\
+El objetivo de este análisis es determinar si existen diferencias estadísticamente significativas en la puntuación de examen (Exam_Score) entre los diferentes niveles de involucramiento parental (Bajo, Medio, Alto).
+
+*Verificación de Homogeneidad de Varianzas*\
+Antes de realizar el ANOVA, se aplicó el **Test de Levene** para evaluar si las varianzas entre los grupos son homogéneas. Si las varianzas no son significativamente diferentes (valor p \> 0.05), se puede proceder con el ANOVA.
+
+```{r, echo=FALSE}
+library(car)
+leveneTest(Puntuacion_Examen ~ Involucramiento_Parental, data = student_data)
+
+```
+
+*Resultado del Test de Levene*:\
+El test de Levene entrego un valor p de 0.6579, indicando que no hay diferencias significativas en las varianzas entre los grupos. Esto confirma que el supuesto de homogeneidad de varianzas está cumplido.
+
+*Realización del ANOVA*\
+Con el supuesto de homogeneidad de varianzas validado, se procedió a realizar un análisis de varianza (ANOVA) para evaluar las diferencias entre los grupos:
+
+```{r}
+# ANOVA para involucramiento parental y puntuación de examen
+anova_result <- aov(Puntuacion_Examen ~ Involucramiento_Parental, data = student_data)
+summary(anova_result)
+```
+
+*Resultado del ANOVA*:\
+El valor p obtenido es \< 2e-16, lo que indica que hay diferencias significativas entre los grupos de involucramiento parental en relación con la puntuación de examen. Esto sugiere que el nivel de **Involucramiento Parental** tiene un impacto en las puntuaciones de examen de los estudiantes.
+
+ \
+ 
+
+```{r, fig.width=16, fig.height5}
+# Gráfico 11: Nivel Educativo de los Padres vs Puntuación
+grafico11 <- ggplot(student_data, aes(x = Nivel_Educativo_Padres, y = Puntuacion_Examen, fill = Nivel_Educativo_Padres)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Nivel Educativo de los Padres vs Puntuación", 
+       x = "Nivel Educativo de los Padres", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12), 
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+# Gráfico 12: Ingresos Familiares vs Puntuación
+grafico12 <- ggplot(student_data, aes(x = Ingresos_Familiares, y = Puntuacion_Examen, fill = Ingresos_Familiares)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Ingresos Familiares vs Puntuación", 
+       x = "Ingresos Familiares", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico11, grafico12, ncol = 2)
+```
+
+```{r, fig.width=16, fig.height=5}
+# Gráfico 13: Acceso a Recursos vs Puntuación
+grafico13 <- ggplot(student_data, aes(x = Acceso_Recursos, y = Puntuacion_Examen, fill = Acceso_Recursos)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Acceso a Recursos vs Puntuación", 
+       x = "Acceso a Recursos", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Gráfico 14: Influencia de los Compañeros vs Puntuación
+grafico14 <- ggplot(student_data, aes(x = Influencia_Companeros, y = Puntuacion_Examen, fill = Influencia_Companeros)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Influencia de los Compañeros vs Puntuación", 
+       x = "Influencia de los Compañeros", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico13, grafico14, ncol = 2)
+```
+
+```{r, fig.width=16, fig.height=5}
+# Gráfico 15: Actividades Extracurriculares vs Puntuación
+grafico15 <- ggplot(student_data, aes(x = Actividades_Extracurriculares, y = Puntuacion_Examen, fill = Actividades_Extracurriculares)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Actividades Extracurriculares vs Puntuación", 
+       x = "Actividades Extracurriculares", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Gráfico 16: Acceso a Internet vs Puntuación
+grafico16 <- ggplot(student_data, aes(x = Acceso_Internet, y = Puntuacion_Examen, fill = Acceso_Internet)) + 
+  geom_boxplot(fill = "#FFA07A", color = "#D64545", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Acceso a Internet vs Puntuación", 
+       x = "Acceso a Internet", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(size = 12),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Mostrar gráficos
+grid.arrange(grafico15, grafico16, ncol = 2)
+```
+
+A primera vista, los gráficos de caja muestran que las medianas de la Puntuación de Examen son relativamente similares entre las distintas categorías de las variables analizadas (como **Nivel Educativo de los Padres, Ingresos Familiares, Acceso a Recursos, Influencia de los Compañeros, Actividades Extracurriculares y Acceso a Internet**).
+
+Aunque se observan pequeñas diferencias entre grupos (por ejemplo, entre niveles de ingresos o acceso a recursos), estas diferencias no parecen ser lo suficientemente llamativas como para sugerir una relación fuerte o significativa a simple vista. Además, la dispersión de las puntuaciones es amplia en todos los casos, con valores atípicos presentes en prácticamente todas las categorías, lo que añade cierta variabilidad a los datos.
+
+Estas variables no parecen ser factores determinantes en la puntuación de examen en un análisis preliminar. Por lo tanto, no se realizará un análisis más profundo de estas variables a menos que sea necesario en etapas posteriores del estudio.
+
+### Factores Dependientes de la Escuela
+
+#### Variables Categóricas
+
+```{r, fig.width=14, fig.height=5}
+# Gráfico 17:Tipo de Escuela vs Puntuación
+grafico17 <- ggplot(student_data, aes(x = Tipo_Escuela, y = Puntuacion_Examen, fill = Tipo_Escuela)) + 
+  geom_boxplot(fill = "#66CDAA", color = "#4CAF50", alpha = 0.8) +
+  theme_minimal(base_size = 10) + 
+  labs(title = "Tipo de Escuela vs Puntuación", 
+       x = "Tipo de Escuela", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+
+
+# Mostrar gráfico 
+grid.arrange(grafico17, ncol = 2)
+```
+
+El análisis de las variables dependientes de la escuela (Tipo de Escuela, Calidad del Profesor y Distancia del Hogar) y su relación con la Puntuación de Examen no revela diferencias notorias que sugieran una influencia significativa en el rendimiento académico de los estudiantes.
+
+-   **Tipo de Escuela**:\
+    A priori, se podría esperar que el tipo de institución educativa (pública o privada) tenga un impacto en las puntuaciones de examen. Sin embargo, los gráficos de caja muestran que las medianas son prácticamente iguales en ambos grupos, con una dispersión similar y valores atípicos presentes en ambos extremos.
+
+*Prueba Estadística T-test*
+
+Para evaluar si las diferencias observadas son estadísticamente significativas, se realizó un t-test para comparar las medias de las puntuaciones de examen entre los dos tipos de escuela.
+
+```{r, echo=FALSE}
+# T-test entre puntuaciones de examen y tipos de escuela
+t_test <- t.test(Puntuacion_Examen ~ Tipo_Escuela, data = student_data)
+t_test
+```
+
+**Descripción**:
+
+Se aplicó un Welch T-test para evaluar si las medias de las puntuaciones de examen entre los dos grupos son significativamente diferentes. Los resultados mostraron: - Estadístico t: -0.72311. - Valor p: 0.4697 (p \> 0.05). - Intervalo de confianza al 95%: \[-0.2776, 0.1280\]. - Medias: - Pública: 67.21. - Privada: 67.29.
+
+El **Welch T-test** confirmó que no hay diferencias estadísticamente significativas en las puntuaciones de examen entre estudiantes de escuelas públicas y privadas (p = 0.4697). Las medias son prácticamente iguales, lo que sugiere que el Tipo de Escuela no influye significativamente en el rendimiento académico.
+
+El **Tipo de Escuela** no influye significativamente en las puntuaciones de examen, como lo confirma la prueba estadística t-test.
+
+\
+\
+
+```{r, fig.width=14, fig.height=5}
+# Gráfico 18: Calidad del Profesor vs Puntuación
+grafico18 <- ggplot(student_data, aes(x = Calidad_Profesor, y = Puntuacion_Examen, fill = Calidad_Profesor)) + 
+  geom_boxplot(fill = "#66CDAA", color = "#4CAF50", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Calidad del Profesor vs Puntuación", 
+       x = "Calidad del Profesor", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+  )
+
+# Gráfico 19: Distancia del Hogar vs Puntuación
+grafico19 <- ggplot(student_data, aes(x = Distancia_Hogar, y = Puntuacion_Examen, fill = Distancia_Hogar)) + 
+  geom_boxplot(fill = "#66CDAA", color = "#4CAF50", alpha = 0.8) + 
+  theme_minimal(base_size = 10) + 
+  labs(title = "Distancia del Hogar vs Puntuación", 
+       x = "Distancia del Hogar", 
+       y = "Puntuación de Examen") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Mostrar gráficos
+grid.arrange( grafico18, grafico19, ncol = 2)
+```
+
+-   **Calidad del Profesor**:\
+    Aunque se esperaría que una calidad alta del profesor tuviera un impacto positivo en las puntuaciones, los resultados muestran que las medianas son muy similares entre las categorías "Alta", "Media" y "Baja". Además, se observa una amplia dispersión de los datos, con valores atípicos en todas las categorías. Esto sugiere que, al menos en este análisis preliminar, la calidad percibida del profesor no presenta una relación clara con las puntuaciones obtenidas.
+
+-   **Distancia del Hogar**:\
+    La variable Distancia del Hogar tampoco muestra diferencias importantes en las puntuaciones. Las medianas son relativamente homogéneas entre estudiantes que viven cerca, a una distancia moderada o lejos del centro educativo.
+
+El análisis de los factores dependientes de la escuela sugiere que:
+
+La **Calidad del Profesor y la Distancia del Hogar** tampoco muestran diferencias claras en las medianas de las puntuaciones, y la dispersión de los datos es amplia en todas las categorías.
+
+Si bien estos factores podrían ser intuitivamente relevantes, los resultados preliminares indican que no son determinantes en el rendimiento académico en este contexto. No obstante, se recomienda considerar un análisis más profundo si es necesario en etapas posteriores, especialmente si se incorporan otras variables o métodos de análisis más avanzados.
+
+## Análisis Multivariado
+
+### Clustering
+
+El clustering puede ser útil para identificar grupos de estudiantes con características similares.
+
+```{r}
+# Realizar clustering k-means
+set.seed(123)
+kmeans_result <- kmeans(student_data %>% select(Horas_Estudio, Puntuacion_Examen), centers = 3)
+
+# Añadir el clúster al dataset
+student_data$Cluster <- as.factor(kmeans_result$cluster)
+
+# Crear gráfico de dispersión con clústeres
+ggplot(student_data, aes(x = Horas_Estudio, y = Puntuacion_Examen, color = Cluster)) + 
+  geom_point() + 
+  theme_minimal() + 
+  labs(title = "Clustering de Estudiantes por Horas de Estudio y Puntuación de Examen",
+       x = "Horas de Estudio", 
+       y = "Puntuación de Examen", 
+       color = "Clúster")
+```
+
+**Descripción:**
+
+-   **Clúster rojo (Cluster 1)**: Estudiantes con menos horas de estudio y puntuaciones más bajas, lo que sugiere que estos estudiantes podrían beneficiarse de dedicar más tiempo al estudio.
+
+-   **Clúster verde (Cluster 2)**: Estudiantes con puntuaciones moderadas y horas de estudio intermedias, lo que podría reflejar un nivel de rendimiento promedio.
+
+-   **Clúster azul (Cluster 3)**: Estudiantes con más horas de estudio y puntuaciones altas, lo que destaca una posible relación positiva entre el tiempo dedicado al estudio y el rendimiento.
+
+## Analisis de Valores Faltantes y Atípicos
+
+### Identificación de Valores Faltantes
+
+Gracias a la transformación de las cadenas vacías a NA, se identificaron valores faltantes con `summarytools` en tres variables:
+
+-   **Calidad del Profesor**: 78 valores faltantes (1.2%).\
+-   **Nivel educativo de los padres**: 90 valores faltantes (1.4%).\
+-   **Distancia del Hogar**: 67 valores faltantes (1.0%)
+
+Estas ausencias son mínimas y no deberían afectar significativamente el análisis posterior. Ademas, por la recomendación de clases es mejor solo no considerarlos, en vez de imputarles la medio u otros valores, que puede alterar la muestra.
+
+### Identificación de Valores Atípicos
+
+Se utiliza el **rango intercuartílico (IQR)** para detectar valores atípicos, considerando el porcentaje en relación al total de los registros respectivos.
+
+```{r}
+# Función para detectar valores atípicos con IQR
+detectar_atipicos <- function(variable) {
+  Q1 <- quantile(variable, 0.25, na.rm = TRUE)  # Primer cuartil
+  Q3 <- quantile(variable, 0.75, na.rm = TRUE)  # Tercer cuartil
+  IQR <- Q3 - Q1  # Rango intercuartil
+  limite_inferior <- Q1 - 1.5 * IQR
+  limite_superior <- Q3 + 1.5 * IQR
+  sum(variable < limite_inferior | variable > limite_superior, na.rm = TRUE)
+}
+
+# Seleccionar variables numéricas
+variables_numericas <- student_data %>%
+  select_if(is.numeric)
+
+# Nombres en español para las variables
+nombres_espanol <- c(
+  "Horas de Estudio", 
+  "Asistencia", 
+  "Horas de Sueño", 
+  "Puntuaciones Previas", 
+  "Sesiones de Tutoría", 
+  "Actividad Física", 
+  "Puntuación de Examen"
+)
+
+# Calcular atípicos y porcentajes
+atipicos_totales <- data.frame(
+  Variable = nombres_espanol,
+  Atipicos = sapply(variables_numericas, detectar_atipicos)
+)
+
+# Agregar porcentaje
+total_observaciones <- nrow(student_data)
+atipicos_totales <- atipicos_totales %>%
+  mutate(Porcentaje = round((Atipicos / total_observaciones) * 100, 2))
+
+# Crear la tabla con flextable
+tabla_atipicos <- atipicos_totales %>%
+  flextable() %>%
+  set_header_labels(Variable = "Variable", Atipicos = "Atípicos", Porcentaje = "(%)") %>%
+  autofit() %>%
+  theme_vanilla()
+
+# Mostrar la tabla (en un documento R Markdown o Quarto)
+tabla_atipicos
+```
+
+Se identificaron valores atípicos en tres variables numéricas:
+
+-   **Horas de Estudio**: 43 valores atípicos (0.65%).
+-   **Sesiones de Tutoría**: 430 valores atípicos (6.51%).
+-   **Puntuación de Examen**: 104 valores atípicos (1.57%).
+
+Las demás variables numéricas no presentan valores atípicos. Se puede evaluar más adelante como podría afectar los valores atípicos en especial en la variable de sesiones de tutotia.
+
+## Conclusiones
+
+-   Las variables numéricas Asistencia y Horas de Estudio son las más relevantes para explicar la Puntuación de Examen debido a sus correlaciones positivas.
+
+-   Puntuaciones Previas y Sesiones de Tutoría podrían ser consideradas, aunque su impacto es menor.
+
+-   Variables como Horas de Sueño y Actividad Física no aportan información significativa y pueden ser descartadas.
+
+-   Las variables categóricas deben evaluarse con mayor profundidad en la fase de modelado para determinar su impacto real.
